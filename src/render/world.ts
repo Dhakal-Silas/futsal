@@ -1,8 +1,9 @@
 import { CONFIG } from '../config';
 import { Camera } from '../core/camera';
 import { angleLerp, lerp } from '../core/math';
-import type { SimWorld } from '../sim/sim';
-import type { Player, TeamInfo } from '../sim/types';
+import type { Ball, Player, TeamInfo } from '../sim/types';
+
+export interface WorldLike { players: Player[]; ball: Ball; }
 import { AnimState, drawStickman, hairColor, skinColor, type StickmanStyle } from './stickman';
 import { BallTrail, drawBall, drawBallShadow } from './ballRender';
 import { drawGoals, drawPitch, type NetState } from './pitch';
@@ -43,7 +44,7 @@ export class WorldRenderer {
   }
 
   /** Advance animation states by real frame time. */
-  tick(sim: SimWorld, frameDt: number) {
+  tick(sim: WorldLike, frameDt: number) {
     for (const p of sim.players) this.anim(p).update(p, frameDt, p.speed);
     this.trail.fade(frameDt);
     const b = sim.ball;
@@ -52,7 +53,7 @@ export class WorldRenderer {
     for (const n of this.nets) { n.phase += frameDt * 14; n.ripple = Math.max(0, n.ripple - frameDt * 0.8); }
   }
 
-  draw(ctx: CanvasRenderingContext2D, cam: Camera, sim: SimWorld, opts: WorldRenderOptions) {
+  draw(ctx: CanvasRenderingContext2D, cam: Camera, sim: WorldLike, opts: WorldRenderOptions) {
     const a = opts.alpha;
     drawPitch(ctx, cam, opts.quality);
     drawGoals(ctx, cam, this.nets, 'back');

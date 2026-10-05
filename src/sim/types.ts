@@ -68,7 +68,7 @@ export interface Player {
   charging: { type: KickType; t: number } | null;
   // celebration variant / keeper dive info
   celebType: number;
-  diveX: number; diveY: number; diveDirY: number;
+  diveX: number; diveY: number; diveDirY: number; diveDist: number;
   holdTimer: number;    // keeper holding the ball
   // AI
   role: AIRole;
@@ -77,6 +77,8 @@ export interface Player {
   aiMemoryBallX: number; aiMemoryBallY: number;
   reactionTimer: number;
   markId: number;
+  aiSprint: boolean;
+  aiDirX: number; aiDirY: number;
   // control
   controlledBy: -1 | 0 | 1;
   // cosmetic

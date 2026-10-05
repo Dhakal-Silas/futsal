@@ -44,7 +44,7 @@ export function choosePassTarget(
       const ldist = pointLineDist(o.x, o.y, passer.x, passer.y, tx, ty);
       if (ldist < 0.9) score -= type === 'cross' ? 1 : 4;
     }
-    if (t.isKeeper) score -= 3;
+    if (t.isKeeper) score -= 7;
     if (score > bestScore) { bestScore = score; best = t; }
   }
   if (!best) return { target: null, aimX: dirX, aimY: dirY, speed: CONFIG.PASS_MIN_SPEED, loft: 0 };
@@ -69,7 +69,7 @@ export function passSpeedForDistance(d: number, type: KickType): number {
  * Shot aim assist: if the aim direction points roughly at the goal, pull it toward a point inside
  * the goal mouth. Returns a unit direction.
  */
-export function assistedShotDir(fromX: number, fromY: number, dirX: number, dirY: number, attackDir: number, assistAngle = CONFIG.SHOT_ASSIST_ANGLE) {
+export function assistedShotDir(fromX: number, fromY: number, dirX: number, dirY: number, attackDir: number, assistAngle: number = CONFIG.SHOT_ASSIST_ANGLE) {
   const gx = goalX(attackDir);
   const gw = CONFIG.GOAL_WIDTH / 2;
   const dl = Math.hypot(dirX, dirY) || 1;

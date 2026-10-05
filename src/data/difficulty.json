@@ -1,0 +1,25 @@
+{
+  "note": "All AI tuning per difficulty. reactionTime in seconds; decisionInterval in seconds; noise values are radians (sd); skills are 0..1.",
+  "levels": {
+    "Easy": {
+      "reactionTime": 0.55, "decisionInterval": 0.4, "passNoise": 0.16, "shotNoise": 0.2, "sprintUsage": 0.3,
+      "pressAggression": 0.3, "tackleSkill": 0.3, "tackleTiming": 0.3, "positionDiscipline": 0.5, "keeperSkill": 0.45,
+      "shootEagerness": 0.6, "throughPassSkill": 0.3, "speedMult": 0.9, "markingTightness": 0.4, "staminaMult": 0.85
+    },
+    "Medium": {
+      "reactionTime": 0.32, "decisionInterval": 0.25, "passNoise": 0.09, "shotNoise": 0.12, "sprintUsage": 0.55,
+      "pressAggression": 0.55, "tackleSkill": 0.55, "tackleTiming": 0.55, "positionDiscipline": 0.7, "keeperSkill": 0.65,
+      "shootEagerness": 0.8, "throughPassSkill": 0.55, "speedMult": 0.97, "markingTightness": 0.6, "staminaMult": 1.0
+    },
+    "Hard": {
+      "reactionTime": 0.18, "decisionInterval": 0.18, "passNoise": 0.05, "shotNoise": 0.07, "sprintUsage": 0.75,
+      "pressAggression": 0.75, "tackleSkill": 0.75, "tackleTiming": 0.75, "positionDiscipline": 0.85, "keeperSkill": 0.8,
+      "shootEagerness": 1.0, "throughPassSkill": 0.75, "speedMult": 1.02, "markingTightness": 0.8, "staminaMult": 1.1
+    },
+    "Legend": {
+      "reactionTime": 0.1, "decisionInterval": 0.14, "passNoise": 0.03, "shotNoise": 0.045, "sprintUsage": 0.9,
+      "pressAggression": 0.9, "tackleSkill": 0.9, "tackleTiming": 0.9, "positionDiscipline": 0.95, "keeperSkill": 0.9,
+      "shootEagerness": 1.1, "throughPassSkill": 0.9, "speedMult": 1.06, "markingTightness": 0.92, "staminaMult": 1.2
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "teams": [
+    { "id": "rma", "name": "Real Madrid", "short": "RMA", "kit": { "primary": "#f4f4f4", "secondary": "#1b2a6b", "shorts": "#f4f4f4", "keeper": "#2e8b57" }, "ratings": { "attack": 93, "defense": 86, "passing": 88, "speed": 90, "stamina": 88, "keeper": 92 } },
+    { "id": "fcb", "name": "FC Barcelona", "short": "BAR", "kit": { "primary": "#a50044", "secondary": "#004d98", "shorts": "#004d98", "keeper": "#f2c94c" }, "ratings": { "attack": 89, "defense": 85, "passing": 95, "speed": 87, "stamina": 88, "keeper": 89 } },
+    { "id": "mci", "name": "Manchester City", "short": "MCI", "kit": { "primary": "#6cabdd", "secondary": "#1c2c5b", "shorts": "#f4f4f4", "keeper": "#ff8c00" }, "ratings": { "attack": 90, "defense": 87, "passing": 92, "speed": 85, "stamina": 89, "keeper": 90 } },
+    { "id": "bay", "name": "Bayern Munich", "short": "BAY", "kit": { "primary": "#dc052d", "secondary": "#ffffff", "shorts": "#dc052d", "keeper": "#1f1f1f" }, "ratings": { "attack": 90, "defense": 85, "passing": 87, "speed": 88, "stamina": 88, "keeper": 91 } },
+    { "id": "liv", "name": "Liverpool", "short": "LIV", "kit": { "primary": "#c8102e", "secondary": "#f6eb61", "shorts": "#c8102e", "keeper": "#00a398" }, "ratings": { "attack": 89, "defense": 85, "passing": 85, "speed": 91, "stamina": 92, "keeper": 90 } },
+    { "id": "ars", "name": "Arsenal", "short": "ARS", "kit": { "primary": "#ef0107", "secondary": "#ffffff", "shorts": "#ffffff", "keeper": "#f0e130" }, "ratings": { "attack": 86, "defense": 87, "passing": 88, "speed": 86, "stamina": 87, "keeper": 87 } },
+    { "id": "psg", "name": "PSG", "short": "PSG", "kit": { "primary": "#1a2a5b", "secondary": "#da291c", "shorts": "#1a2a5b", "keeper": "#7fd1b9" }, "ratings": { "attack": 90, "defense": 82, "passing": 86, "speed": 90, "stamina": 84, "keeper": 88 } },
+    { "id": "int", "name": "Inter Milan", "short": "INT", "kit": { "primary": "#0b4ea2", "secondary": "#141414", "shorts": "#141414", "keeper": "#f7a800" }, "ratings": { "attack": 86, "defense": 89, "passing": 85, "speed": 84, "stamina": 87, "keeper": 86 } },
+    { "id": "acm", "name": "AC Milan", "short": "MIL", "kit": { "primary": "#fb090b", "secondary": "#141414", "shorts": "#ffffff", "keeper": "#7cfc00" }, "ratings": { "attack": 84, "defense": 84, "passing": 84, "speed": 86, "stamina": 85, "keeper": 88 } },
+    { "id": "juv", "name": "Juventus", "short": "JUV", "kit": { "primary": "#141414", "secondary": "#ffffff", "shorts": "#ffffff", "keeper": "#f2c94c" }, "ratings": { "attack": 83, "defense": 88, "passing": 83, "speed": 83, "stamina": 86, "keeper": 87 } },
+    { "id": "atm", "name": "Atletico Madrid", "short": "ATM", "kit": { "primary": "#cb3524", "secondary": "#ffffff", "shorts": "#272e61", "keeper": "#2eaa6c" }, "ratings": { "attack": 83, "defense": 90, "passing": 82, "speed": 84, "stamina": 90, "keeper": 90 } },
+    { "id": "bvb", "name": "Borussia Dortmund", "short": "BVB", "kit": { "primary": "#fde100", "secondary": "#141414", "shorts": "#141414", "keeper": "#3a86ff" }, "ratings": { "attack": 85, "defense": 80, "passing": 83, "speed": 89, "stamina": 86, "keeper": 84 } },
+    { "id": "che", "name": "Chelsea", "short": "CHE", "kit": { "primary": "#034694", "secondary": "#ffffff", "shorts": "#034694", "keeper": "#f2c94c" }, "ratings": { "attack": 84, "defense": 84, "passing": 85, "speed": 86, "stamina": 85, "keeper": 84 } },
+    { "id": "nap", "name": "Napoli", "short": "NAP", "kit": { "primary": "#12a0d7", "secondary": "#ffffff", "shorts": "#ffffff", "keeper": "#ff6a00" }, "ratings": { "attack": 85, "defense": 83, "passing": 84, "speed": 87, "stamina": 85, "keeper": 85 } },
+    { "id": "ben", "name": "Benfica", "short": "BEN", "kit": { "primary": "#e30613", "secondary": "#ffffff", "shorts": "#ffffff", "keeper": "#1f1f1f" }, "ratings": { "attack": 82, "defense": 80, "passing": 82, "speed": 85, "stamina": 85, "keeper": 83 } },
+    { "id": "por", "name": "Porto", "short": "POR", "kit": { "primary": "#0d47a1", "secondary": "#ffffff", "shorts": "#0d47a1", "keeper": "#f2c94c" }, "ratings": { "attack": 81, "defense": 82, "passing": 81, "speed": 84, "stamina": 86, "keeper": 84 } }
+  ]
+}

@@ -23,9 +23,9 @@ export function createPlayer(id: number, team: TeamIndex, index: number, number:
     stamina: CONFIG.STAMINA_MAX, speedMult, skill, tackleSkill,
     action: 'none', actionT: 0, actionDur: 0, kick: null, kickContactDone: false,
     slideX: 1, slideY: 0, slideHitBall: false, slideCooldown: 0, controlCooldown: 0, dribbleTimer: 0, hasBall: false,
-    charging: null, celebType: 0, diveX: 0, diveY: 0, diveDirY: 0, holdTimer: 0,
+    charging: null, celebType: 0, diveX: 0, diveY: 0, diveDirY: 0, diveDist: 1, holdTimer: 0,
     role: index === 0 ? 'Keeper' : 'ReturnToFormation', targetX: 0, targetY: 0, aiTimer: 0,
-    aiMemoryBallX: 0, aiMemoryBallY: 0, reactionTimer: 0, markId: -1, controlledBy: -1,
+    aiMemoryBallX: 0, aiMemoryBallY: 0, reactionTimer: 0, markId: -1, aiSprint: false, aiDirX: 1, aiDirY: 0, controlledBy: -1,
     hair, skin, yellow: false, lastKickT: 99, diveSuccessChance: 0.5,
   };
 }
@@ -84,7 +84,9 @@ export function stepPlayer(p: Player, cmd: PlayerCommand, ctx: SimContext, dt: n
     case 'dive': {
       p.actionT += dt;
       const t = p.actionT / p.actionDur;
-      const sp = CONFIG.KEEPER_DIVE_SPEED * Math.max(0, 1 - t * t);
+      // total travel = speed * dur * 2/3, so scale the speed to reach the dive target
+      const want = p.diveDist / (p.actionDur * 2 / 3);
+      const sp = Math.min(CONFIG.KEEPER_DIVE_SPEED * 1.3, want) * Math.max(0, 1 - t * t);
       p.vx = p.diveX * sp; p.vy = p.diveY * sp;
       moveX = 0; moveY = 0; speedScale = 0;
       if (p.actionT >= p.actionDur) { startAction(p, 'getup', 0.5); p.vx = 0; p.vy = 0; }
@@ -130,7 +132,7 @@ export function stepPlayer(p: Player, cmd: PlayerCommand, ctx: SimContext, dt: n
     } else if (cmd.dive && p.isKeeper) {
       const dx = cmd.dive.x - p.x, dy = cmd.dive.y - p.y;
       const l = Math.hypot(dx, dy) || 1;
-      p.diveX = dx / l; p.diveY = dy / l; p.diveDirY = dy;
+      p.diveX = dx / l; p.diveY = dy / l; p.diveDirY = dy; p.diveDist = Math.max(0.5, l);
       p.heading = Math.atan2(p.diveY, p.diveX);
       startAction(p, 'dive', CONFIG.KEEPER_DIVE_DURATION);
       return finishMove(p, ctx, dt, 0, 0, 0, cmd, false);
@@ -244,6 +246,7 @@ export function executeKick(p: Player, kick: Kick, ctx: SimContext) {
   const ball = ctx.ball;
   const d = Math.hypot(ball.x - p.x, ball.y - p.y);
   if (d > CONFIG.KICK_REACH || ball.z > 1.4) return; // whiff
+  if (ball.owner >= 0 && ball.owner !== p.id && ctx.players[ball.owner].isKeeper && ctx.players[ball.owner].holdTimer > 0) return;
   if (ball.owner >= 0 && ball.owner !== p.id) {
     const o = ctx.players[ball.owner];
     if (o.team !== p.team) { o.hasBall = false; }
@@ -334,33 +337,31 @@ function dribble(p: Player, ball: Ball, dt: number, frozen: boolean) {
   const hx = Math.cos(p.heading), hy = Math.sin(p.heading);
   const dirX = moving ? p.vx / p.speed : hx;
   const dirY = moving ? p.vy / p.speed : hy;
-  const off = CONFIG.DRIBBLE_OFFSET + (moving ? p.speed * 0.05 : 0);
+  const off = CONFIG.DRIBBLE_OFFSET + (moving ? p.speed * 0.04 : 0);
   const tx = p.x + dirX * off, ty = p.y + dirY * off;
   if (frozen) {
     ball.vx = (tx - ball.x) / 0.12; ball.vy = (ty - ball.y) / 0.12;
     return;
   }
-  const recentlyTouched = p.dribbleTimer > CONFIG.DRIBBLE_TOUCH_INTERVAL * 0.55;
+  // small touch ahead while running (visual knock), then the spring gathers the ball again
   if (moving && p.dribbleTimer <= 0) {
-    // knock the ball ahead
-    const sp = p.speed * CONFIG.DRIBBLE_TOUCH_SPEED_BONUS + 0.8;
+    const sp = p.speed * 1.05 + 0.6;
     ball.vx = dirX * sp; ball.vy = dirY * sp;
     p.dribbleTimer = CONFIG.DRIBBLE_TOUCH_INTERVAL;
-    return;
   }
-  if (!recentlyTouched) {
-    // spring the ball toward the dribble point
-    const tau = 0.1;
-    const wantVx = (tx - ball.x) / tau, wantVy = (ty - ball.y) / tau;
-    const maxV = p.speed + 7;
-    let l = Math.hypot(wantVx, wantVy);
-    const k = l > maxV ? maxV / l : 1;
-    ball.vx += (wantVx * k - ball.vx) * Math.min(1, dt * 18);
-    ball.vy += (wantVy * k - ball.vy) * Math.min(1, dt * 18);
-  }
+  const recentlyTouched = p.dribbleTimer > CONFIG.DRIBBLE_TOUCH_INTERVAL * 0.5;
+  const tau = 0.12;
+  const wantVx = (tx - ball.x) / tau, wantVy = (ty - ball.y) / tau;
+  const maxV = p.speed + 6;
+  const l = Math.hypot(wantVx, wantVy);
+  const k = l > maxV ? maxV / l : 1;
+  const blend = Math.min(1, dt * (recentlyTouched ? 5 : 20));
+  ball.vx += (wantVx * k - ball.vx) * blend;
+  ball.vy += (wantVy * k - ball.vy) * blend;
 }
 
 function contest(owner: Player, ball: Ball, ctx: SimContext, dt: number) {
+  if (owner.isKeeper && owner.holdTimer > 0) return;
   for (const o of ctx.players) {
     if (o.team === owner.team || o.isKeeper) continue;
     if (o.action !== 'none' && o.action !== 'getup') continue;
@@ -368,7 +369,9 @@ function contest(owner: Player, ball: Ball, ctx: SimContext, dt: number) {
     const d = Math.hypot(ball.x - o.x, ball.y - o.y);
     if (d < 0.6) {
       // standing tackle / poke: probability per second
-      const rate = 2.2 * (0.45 + 0.75 * o.tackleSkill) * (0.6 + 0.6 * (1 - owner.skill));
+      const facing = ((ball.x - o.x) * Math.cos(o.heading) + (ball.y - o.y) * Math.sin(o.heading)) / (d || 1);
+      if (facing < 0.2 || ball.z > 0.5) continue;
+      const rate = 0.9 * (0.45 + 0.75 * o.tackleSkill) * (0.6 + 0.6 * (1 - owner.skill));
       if (ctx.rng.next() < rate * dt) {
         owner.hasBall = false; owner.controlCooldown = 0.35;
         gainPossession(o, ball, ctx);
