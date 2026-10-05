@@ -27,7 +27,8 @@ export const CONFIG = {
   BALL_RADIUS: 0.11,
   BALL_GRAVITY: 9.81 * 1.4, // slightly heavy for arcade feel
   BALL_BOUNCE: 0.6,
-  BALL_GROUND_FRICTION: 0.75, // velocity fraction kept per second on the ground (rolling)
+  BALL_GROUND_FRICTION: 0.85, // velocity fraction kept per second on the ground (rolling)
+  BALL_ROLL_DECEL: 3.0, // linear m/s^2 deceleration while rolling
   BALL_AIR_DRAG: 0.96,
   BALL_MIN_SPEED: 0.08,
   BALL_SPIN_BOUNCE_LOSS: 0.85, // horizontal speed kept on bounce
@@ -119,7 +120,7 @@ export const CONFIG = {
   // --- Camera ---
   CAM_FOLLOW_STIFFNESS: 4.5,
   CAM_LOOKAHEAD: 0.35, // s of ball velocity
-  CAM_BASE_ZOOM: 34, // px per meter at zoom 1
+  CAM_BASE_ZOOM: 40, // px per meter at zoom 1
   CAM_KICKOFF_ZOOM: 0.78,
   CAM_GOAL_ZOOM: 1.25,
   CAM_ZOOM_STIFFNESS: 2.5,
