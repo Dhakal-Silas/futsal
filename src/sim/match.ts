@@ -25,6 +25,8 @@ export interface MatchOptions {
   isFinal?: boolean;
   /** skip the ET/penalties: used by the demo */
   demo?: boolean;
+  /** players per side (5 or 7) */
+  teamSize?: number;
 }
 
 export interface GoalInfo { team: TeamIndex; scorerId: number; ownGoal: boolean; minute: number; }
@@ -72,11 +74,13 @@ export class Match {
   attackingAtGoal = false;
   pendingPenalty = false;
   readonly maxReplay = Math.round(CONFIG.REPLAY_RECORD_SECONDS * CONFIG.TICK_RATE);
+  teamSize: number = CONFIG.DEFAULT_TEAM_SIZE;
 
   constructor(public opts: MatchOptions) {
     this.sim = new SimWorld(opts.seed);
     this.halfLength = opts.halfMinutes * 60;
-    this.formations = [formationById(opts.formations[0]), formationById(opts.formations[1])];
+    this.teamSize = opts.teamSize ?? CONFIG.DEFAULT_TEAM_SIZE;
+    this.formations = [formationById(opts.formations[0], this.teamSize), formationById(opts.formations[1], this.teamSize)];
     const cpu = difficultyParams(opts.difficulty);
     // human teams: teammates behave at a solid, low-noise level regardless of difficulty
     const mate = difficultyParams('Hard');
@@ -116,8 +120,8 @@ export class Match {
       const info = this.opts.teams[t];
       const r = info.ratings;
       const par = this.params[t];
-      const numbers = [1, 4, 7, 10, 9];
-      for (let i = 0; i < 5; i++) {
+      const numbers = [1, 4, 7, 10, 9, 8, 11];
+      for (let i = 0; i < this.teamSize; i++) {
         const speedMult = (0.9 + (r.speed - 80) / 100) * (this.isHuman(t as TeamIndex) ? 1 : par.speedMult);
         const skill = clamp(0.45 + (r.passing + r.attack - 160) / 60, 0.3, 1);
         const tackle = clamp(0.4 + (r.defense - 80) / 40, 0.3, 1) * (this.isHuman(t as TeamIndex) ? 0.85 : 0.5 + par.tackleSkill * 0.6);
@@ -137,7 +141,7 @@ export class Match {
       p.stamina = Math.max(p.stamina, 60);
     }
     resetBall(this.ball, 0, 0);
-    const taker = this.sim.players.find((p) => p.team === kicking && p.index === 4)!;
+    const taker = this.sim.players.find((p) => p.team === kicking && p.index === this.teamSize - 1)!;
     this.restart = { type: 'kickoff', team: kicking, x: 0, y: 0, takerId: taker.id, timer: 0, ready: false };
     this.sim.ballActive = false;
     this.phase = 'kickoff'; this.phaseT = 0;
@@ -346,7 +350,7 @@ export class Match {
     // ball moves to the spot quickly but smoothly (velocity-based)
     b.vx = (x - b.x) * 4; b.vy = (y - b.y) * 4; b.vz = 0; b.z = Math.min(b.z, 0.2); b.inNet = -1;
     this.phase = 'restart'; this.phaseT = 0;
-    if (this.isHuman(team)) { this.activeIds[team] = taker.isKeeper ? this.activeIds[team] : taker.id; this.applyControl(team); }
+    if (this.isHuman(team)) { this.activeIds[team] = taker.id; this.applyControl(team); }
   }
 
   /** Called while in 'kickoff' / 'restart': move the ball to the spot, make the taker own it, wait for the kick. */
@@ -373,11 +377,12 @@ export class Match {
       // keep the ball at the taker while waiting
       if (b.owner !== taker.id && taker.action !== 'kick' && taker.action !== 'throw') { gainPossession(taker, b, this.sim); }
       // an idle human taker is helped out after a while so the match never stalls
-      if (this.isHuman(r.team) && r.timer > CONFIG.HUMAN_RESTART_TIMEOUT && taker.action === 'none' && !taker.isKeeper) {
+      if (this.isHuman(r.team) && r.timer > CONFIG.HUMAN_RESTART_TIMEOUT && taker.action === 'none') {
         const dir = this.attackDir(r.team);
         const choice = choosePassTarget(taker, this.sim.teammates(r.team), this.sim.opponents(r.team), dir, 0, 'pass', dir);
         const cmd = this.sim.command(taker.id);
-        cmd.kick = choice.target ? makeKick('pass', 0.5, choice.aimX, choice.aimY, choice.target.id, 0.03, choice.speed, 0) : makeKick('pass', 0.5, dir, 0, -1, 0.03);
+        const kt = taker.isKeeper ? 'throw' : 'pass';
+        cmd.kick = choice.target ? makeKick(kt, 0.5, choice.aimX, choice.aimY, choice.target.id, 0.03, taker.isKeeper ? 12 : choice.speed, taker.isKeeper ? 0.2 : 0) : makeKick(taker.isKeeper ? 'clear' : 'pass', 0.8, dir, 0, -1, 0.03);
       }
     }
     // keep opponents away from the ball
@@ -511,12 +516,18 @@ export class Match {
     for (let t = 0; t < 2; t++) {
       const team = t as TeamIndex;
       if (!this.isHuman(team)) continue;
-      if (this.phase !== 'play') { if (this.activeIds[team] < 0 || this.player(this.activeIds[team]).isKeeper) this.pickActive(team, true); continue; }
+      if (this.phase !== 'play') {
+        const r = this.restart;
+        if (r && r.team === team && (this.phase === 'kickoff' || this.phase === 'restart')) {
+          if (this.activeIds[team] !== r.takerId) { this.activeIds[team] = r.takerId; this.applyControl(team); }
+        } else if (this.activeIds[team] < 0 || this.player(this.activeIds[team]).isKeeper) this.pickActive(team, true);
+        continue;
+      }
       const owner = this.ball.owner;
       if (owner >= 0 && this.player(owner).team === team) {
-        // our player has it: control them (unless the keeper)
-        if (!this.player(owner).isKeeper && this.activeIds[team] !== owner) { this.activeIds[team] = owner; this.applyControl(team); this.switchCooldown[team] = CONFIG.AUTO_SWITCH_COOLDOWN; }
-        if (this.activeIds[team] === owner) this.creditPassOnce(this.player(owner));
+        // our player has it: control them (the keeper too, to choose the distribution)
+        if (this.activeIds[team] !== owner) { this.activeIds[team] = owner; this.applyControl(team); this.switchCooldown[team] = CONFIG.AUTO_SWITCH_COOLDOWN; }
+        this.creditPassOnce(this.player(owner));
         continue;
       }
       // the pass receiver keeps control while the ball travels to them
@@ -540,7 +551,7 @@ export class Match {
   }
 
   /** Change a team's formation (half time / pause). */
-  setFormation(team: TeamIndex, id: string) { this.formations[team] = formationById(id); this.opts.formations[team] = id; }
+  setFormation(team: TeamIndex, id: string) { this.formations[team] = formationById(id, this.teamSize); this.opts.formations[team] = id; }
 
   /* ------------------------------------------------------------------ replay */
 

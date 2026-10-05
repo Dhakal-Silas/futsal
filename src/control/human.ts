@@ -3,6 +3,10 @@ import type { InputManager, PlayerInputState } from '../core/input';
 import type { SimWorld } from '../sim/sim';
 import type { KickType, Player, PlayerCommand } from '../sim/types';
 import { assistedShotDir, choosePassTarget, makeKick } from '../sim/kicks';
+import { interceptPoint } from '../ai/steering';
+import { clamp } from '../core/math';
+
+const tmp = { x: 0, y: 0 };
 
 /** Translates human input into a PlayerCommand for the active player of one side. */
 export class HumanController {
@@ -13,6 +17,8 @@ export class HumanController {
   chargeT = 0;
   jockey = false;
   pressRequest = false;
+  /** set by the session: a pass is on its way to the active player */
+  receiving = false;
   constructor(public slot: 0 | 1, public team: 0 | 1, private sim: SimWorld, private input: InputManager) {}
 
   get inputState(): PlayerInputState { return this.input.players[this.slot]; }
@@ -26,6 +32,42 @@ export class HumanController {
     this.pressRequest = false; this.jockey = false;
     if (!p) return cmd;
     const ball = this.sim.ball;
+    const attackDirK = this.sim.attackDir(p.team);
+
+    // goalkeeper in hand: choose the distribution (pass = throw, shoot/cross = long kick)
+    if (p.isKeeper) {
+      cmd.moveX *= 0.8; cmd.moveY *= 0.8; cmd.sprint = false;
+      this.passTargetId = -1;
+      if (p.hasBall && p.action === 'none') {
+        let ax = st.moveX, ay = st.moveY;
+        if (Math.hypot(ax, ay) < 0.1) { ax = attackDirK; ay = 0; }
+        const choice = choosePassTarget(p, this.sim.teammates(p.team), this.sim.opponents(p.team), ax, ay, 'pass', attackDirK);
+        this.passTargetId = choice.target ? choice.target.id : -1;
+        if (st.pressed.pass || st.pressed.through) {
+          const d = choice.target ? Math.hypot(choice.target.x - p.x, choice.target.y - p.y) : 10;
+          cmd.kick = makeKick('throw', 0.6, choice.aimX, choice.aimY, this.passTargetId, 0.02, clamp(6 + d * 0.7, 9, 16), 0.2);
+        } else if (st.pressed.shoot || st.pressed.cross) {
+          const l = Math.hypot(ax, ay) || 1;
+          cmd.kick = makeKick('clear', 1, ax / l, ay / l, -1, 0.05, CONFIG.KEEPER_KICK_SPEED, 0.42);
+        }
+      }
+      return cmd;
+    }
+
+    // receiving a pass: run to meet the ball unless the player deliberately steers away
+    if (this.receiving && ball.owner < 0 && p.action === 'none') {
+      interceptPoint(p, ball.x, ball.y, ball.vx, ball.vy, tmp, CONFIG.PLAYER_JOG_SPEED);
+      const dx = tmp.x - p.x, dy = tmp.y - p.y;
+      const d = Math.hypot(dx, dy);
+      if (d > 0.2) {
+        const ux = dx / d, uy = dy / d;
+        const il = Math.hypot(st.moveX, st.moveY);
+        const dot = il > 0.3 ? (st.moveX * ux + st.moveY * uy) / il : 1;
+        if (il < 0.3) { cmd.moveX = ux * Math.min(1, d / 1.2); cmd.moveY = uy * Math.min(1, d / 1.2); }
+        else if (dot > -0.4) { cmd.moveX = ux * 0.6 + st.moveX * 0.4; cmd.moveY = uy * 0.6 + st.moveY * 0.4; }
+        cmd.sprint = st.held.sprint && d > 3;
+      } else { cmd.moveX = 0; cmd.moveY = 0; cmd.hasFace = true; cmd.faceX = ball.x - p.x; cmd.faceY = ball.y - p.y; }
+    }
     const nearBall = Math.hypot(ball.x - p.x, ball.y - p.y) < CONFIG.KICK_REACH + 0.4 && ball.z < 1.4;
     const canKick = p.hasBall || (nearBall && ball.owner < 0) || (nearBall && ball.owner >= 0 && this.sim.players[ball.owner].team !== p.team && ball.z < 0.6);
     const attackDir = this.sim.attackDir(p.team);

@@ -73,6 +73,15 @@ tests/    ball, evaluate, bracket, match-smoke (runs full CPU vs CPU matches hea
 - CPU keeper skill blends team rating (40%) with the difficulty table (60%).
 - Dev URL flags: `?quick`, `&demo`, `&ko`, `&half=<min>`, `&pens`, `?champion`.
 
+## Playtest round 1 changes
+- 7-a-side default with new formations; 5-a-side kept as a setting.
+- Canvas fills the window (logical height 720, width follows the aspect ratio); F = fullscreen.
+- Slower pace: lower run/sprint/accel/turn and kick speeds.
+- Receivers meet the ball (CPU and human auto-receive); keeper catches shots at his body, higher save odds,
+  and the human controls the keeper's throw/kick after a catch or goal clearance (auto after 6 s).
+- One chaser per team, second presser only when close, teammate spacing steering, looser marking.
+- Goals redrawn with a boxed net.
+
 ## Status
 All ten milestones implemented. Verified with unit tests (ball physics, AI scoring helpers,
 bracket/group logic), headless full-match tests (CPU vs CPU, determinism, ET + penalties) and

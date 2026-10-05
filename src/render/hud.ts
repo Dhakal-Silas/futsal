@@ -1,3 +1,4 @@
+import { VIEW } from '../core/view';
 import { CONFIG, HALF_LENGTH, HALF_WIDTH } from '../config';
 import { Camera } from '../core/camera';
 import type { InputManager, GameAction } from '../core/input';
@@ -15,7 +16,7 @@ export class Hud {
   minimap = true;
 
   drawScoreboard(ctx: CanvasRenderingContext2D, m: Match) {
-    const W = CONFIG.LOGICAL_W;
+    const W = VIEW.w;
     const t0 = m.team(0), t1 = m.team(1);
     const x = W / 2, y = 22;
     roundRect(ctx, x - 190, 6, 380, 36, 8, 'rgba(10,14,20,0.82)', 'rgba(255,255,255,0.15)');
@@ -41,7 +42,7 @@ export class Hud {
 
   drawBanner(ctx: CanvasRenderingContext2D, m: Match) {
     const b = m.banner; if (!b) return;
-    const W = CONFIG.LOGICAL_W, H = CONFIG.LOGICAL_H;
+    const W = VIEW.w, H = VIEW.h;
     const a = Math.min(1, b.t * 2.5);
     ctx.save(); ctx.globalAlpha = a;
     const big = b.text.length <= 6;
@@ -102,9 +103,9 @@ export class Hud {
       : attacking
         ? [`${k('pass')} pass`, `${k('through')} through`, `${k('shoot')} shoot (hold)`, `${k('cross')} cross`, `${k('sprint')} sprint`]
         : [`${k('pass')} press`, `${k('shoot')} contain`, `${k('slide')} slide`, `${k('switch')} switch`, `${k('sprint')} sprint`];
-    const x = slot === 0 ? 14 : CONFIG.LOGICAL_W - 14;
-    const y = CONFIG.LOGICAL_H - 14 - lines.length * 16;
-    roundRect(ctx, slot === 0 ? 8 : CONFIG.LOGICAL_W - 8 - 150, y - 20, 150, lines.length * 16 + 26, 6, 'rgba(8,10,16,0.55)');
+    const x = slot === 0 ? 14 : VIEW.w - 14;
+    const y = VIEW.h - 14 - lines.length * 16;
+    roundRect(ctx, slot === 0 ? 8 : VIEW.w - 8 - 150, y - 20, 150, lines.length * 16 + 26, 6, 'rgba(8,10,16,0.55)');
     text(ctx, `P${slot + 1} ${m.team(team).short} — ${taker ? 'SET PIECE' : attacking ? 'ATTACK' : 'DEFEND'}`, x, y - 8, 11, P_COLORS[slot], slot === 0 ? 'left' : 'right', 'bold');
     lines.forEach((l, i) => text(ctx, l, x, y + 10 + i * 16, 12, '#e5e7eb', slot === 0 ? 'left' : 'right'));
   }
@@ -112,7 +113,7 @@ export class Hud {
   drawMinimap(ctx: CanvasRenderingContext2D, m: Match) {
     if (!this.minimap) return;
     const w = 160, h = 80;
-    const x = CONFIG.LOGICAL_W / 2 - w / 2, y = CONFIG.LOGICAL_H - h - 10;
+    const x = VIEW.w / 2 - w / 2, y = VIEW.h - h - 10;
     roundRect(ctx, x, y, w, h, 4, 'rgba(20,80,40,0.7)', 'rgba(255,255,255,0.5)');
     ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(x + w / 2, y); ctx.lineTo(x + w / 2, y + h); ctx.stroke();
@@ -138,22 +139,35 @@ export class Hud {
     if (m.isHuman(shooter.team as 0 | 1)) {
       const slot = m.opts.humanSlots[shooter.team];
       const b = m.sim && (null as any);
-      text(ctx, `P${slot + 1}: aim with move keys, hold SHOOT to charge, release to kick`, CONFIG.LOGICAL_W / 2, CONFIG.LOGICAL_H - 40, 15, '#fff', 'center', 'bold');
+      text(ctx, `P${slot + 1}: aim with move keys, hold SHOOT to charge, release to kick`, VIEW.w / 2, VIEW.h - 40, 15, '#fff', 'center', 'bold');
       void b;
-    } else text(ctx, `${m.team(shooter.team).name} to shoot`, CONFIG.LOGICAL_W / 2, CONFIG.LOGICAL_H - 40, 15, '#fff', 'center', 'bold');
+    } else text(ctx, `${m.team(shooter.team).name} to shoot`, VIEW.w / 2, VIEW.h - 40, 15, '#fff', 'center', 'bold');
   }
 
   drawWaitPrompt(ctx: CanvasRenderingContext2D, m: Match, input: InputManager) {
     if ((m.phase === 'kickoff' || m.phase === 'restart') && m.restart && m.restart.ready) {
       const r = m.restart;
-      if (m.isHuman(r.team) && !m.player(r.takerId).isKeeper) {
+      if (m.isHuman(r.team)) {
         const slot = m.opts.humanSlots[r.team];
         const k = IM.keyName(input.bindings[slot].pass[0]);
-        const name = r.type === 'kickoff' ? 'KICK-OFF' : r.type === 'kickin' ? 'KICK-IN' : r.type === 'corner' ? 'CORNER' : r.type === 'freekick' ? 'FREE KICK' : 'RESTART';
-        text(ctx, `${name} — P${slot + 1} press ${k} to pass (or shoot / cross)`, CONFIG.LOGICAL_W / 2, 86, 15, '#fff', 'center', 'bold');
+        const sh = IM.keyName(input.bindings[slot].shoot[0]);
+        const keeper = m.player(r.takerId).isKeeper;
+        const name = r.type === 'kickoff' ? 'KICK-OFF' : r.type === 'kickin' ? 'KICK-IN' : r.type === 'corner' ? 'CORNER' : r.type === 'freekick' ? 'FREE KICK' : r.type === 'goalclear' ? 'GOAL CLEARANCE' : 'RESTART';
+        text(ctx, keeper ? `${name} — P${slot + 1}: ${k} throw to a teammate, ${sh} kick long (aim with the move keys)` : `${name} — P${slot + 1} press ${k} to pass (or shoot / cross)`, VIEW.w / 2, 86, 15, '#fff', 'center', 'bold');
       }
     }
-    if (m.phase === 'halftime') { text(ctx, 'HALF TIME — press Enter to continue', CONFIG.LOGICAL_W / 2, CONFIG.LOGICAL_H * 0.5, 22, '#fff', 'center', '900'); text(ctx, 'Esc opens the pause menu to change formation', CONFIG.LOGICAL_W / 2, CONFIG.LOGICAL_H * 0.5 + 32, 15, '#e5e7eb', 'center'); }
-    if (m.phase === 'extratime_break') text(ctx, 'EXTRA TIME — press Enter to continue', CONFIG.LOGICAL_W / 2, CONFIG.LOGICAL_H * 0.5, 22, '#fff', 'center', '900');
+    if (m.phase === 'play') {
+      for (let t = 0; t < 2; t++) {
+        const id = m.activeIds[t];
+        if (id < 0) continue;
+        const p = m.player(id);
+        if (p.isKeeper && p.hasBall) {
+          const slot = m.opts.humanSlots[t];
+          text(ctx, `KEEPER — P${slot + 1}: ${IM.keyName(input.bindings[slot].pass[0])} throw, ${IM.keyName(input.bindings[slot].shoot[0])} kick long`, VIEW.w / 2, 86, 15, '#fff', 'center', 'bold');
+        }
+      }
+    }
+    if (m.phase === 'halftime') { text(ctx, 'HALF TIME — press Enter to continue', VIEW.w / 2, VIEW.h * 0.5, 22, '#fff', 'center', '900'); text(ctx, 'Esc opens the pause menu to change formation', VIEW.w / 2, VIEW.h * 0.5 + 32, 15, '#e5e7eb', 'center'); }
+    if (m.phase === 'extratime_break') text(ctx, 'EXTRA TIME — press Enter to continue', VIEW.w / 2, VIEW.h * 0.5, 22, '#fff', 'center', '900');
   }
 }

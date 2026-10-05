@@ -18,6 +18,7 @@ export interface TournamentState {
   halfMinutes: number;
   difficulty: string;
   formation: string;
+  teamSize?: number;
   /** results of the user's played matches, for the bracket view */
   log: string[];
 }
@@ -29,13 +30,13 @@ export class Tournament {
   rng: Rng;
   constructor(state: TournamentState) { this.state = state; this.rng = new Rng(state.seed ^ 0x9e37); }
 
-  static create(userTeam: string, classico: boolean, groupStage: boolean, halfMinutes: number, difficulty: string, formation: string, seed = Date.now() & 0xffffff): Tournament {
+  static create(userTeam: string, classico: boolean, groupStage: boolean, halfMinutes: number, difficulty: string, formation: string, seed = Date.now() & 0xffffff, teamSize = 7): Tournament {
     const rng = new Rng(seed);
     const ids = TEAMS.map((t) => t.id);
     const order = drawOrder(ids, rng, classico ? ['rma', 'fcb'] : null);
     const st: TournamentState = {
       version: 1, seed, userTeam, classico, groupStage, stage: 'draw', drawOrder: order, groups: null, groupMatches: null, bracket: null,
-      halfMinutes, difficulty, formation, log: [],
+      halfMinutes, difficulty, formation, teamSize, log: [],
     };
     const t = new Tournament(st);
     if (groupStage) {

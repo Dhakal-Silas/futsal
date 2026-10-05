@@ -1,3 +1,4 @@
+import { VIEW } from '../core/view';
 import { CONFIG, HALF_LENGTH } from '../config';
 import { Camera } from '../core/camera';
 import type { InputManager } from '../core/input';
@@ -88,6 +89,8 @@ export class MatchSession {
       }
       if (h.activeId >= 0) {
         const cmd = this.sim.command(h.activeId);
+        const lp = m.lastPass;
+        h.receiving = !!lp && lp.team === team && lp.targetId === h.activeId && this.sim.time - lp.t < 2.0;
         h.update(dt, cmd);
         m.humanPress[team] = h.pressRequest; m.humanJockey[team] = h.jockey;
         if (h.inputState.pressed.switch && m.phase === 'play') {
@@ -219,16 +222,16 @@ export class MatchSession {
     const m = this.match;
     const cam = this.cam;
     ctx.fillStyle = '#1b4d2b';
-    ctx.fillRect(0, 0, CONFIG.LOGICAL_W, CONFIG.LOGICAL_H);
+    ctx.fillRect(0, 0, VIEW.w, VIEW.h);
     if (this.replaying) {
       const frac = this.replayPos - Math.floor(this.replayPos);
       this.replayWorld.tick(this.replayView, frameDt * CONFIG.REPLAY_SLOWMO * 1.4);
       this.replayWorld.nets[0].ripple = this.world.nets[0].ripple; this.replayWorld.nets[1].ripple = this.world.nets[1].ripple;
       this.replayWorld.draw(ctx, cam, this.replayView, { quality: this.settings.quality, alpha: frac, overlays: () => this.effects.draw(ctx, cam) });
       this.drawLetterbox(ctx);
-      textShadow(ctx, 'REPLAY', CONFIG.LOGICAL_W - 40, 60, 26, '#fff', 'right', '900');
+      textShadow(ctx, 'REPLAY', VIEW.w - 40, 60, 26, '#fff', 'right', '900');
       const blink = Math.floor(this.t * 2) % 2 === 0;
-      if (blink) { ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(CONFIG.LOGICAL_W - 150, 60, 7, 0, Math.PI * 2); ctx.fill(); }
+      if (blink) { ctx.fillStyle = '#ef4444'; ctx.beginPath(); ctx.arc(VIEW.w - 150, 60, 7, 0, Math.PI * 2); ctx.fill(); }
       this.hud.drawScoreboard(ctx, m);
       return;
     }
@@ -274,17 +277,17 @@ export class MatchSession {
       this.hud.drawHints(ctx, m, this.input, h.slot, h.team, attacking, taker);
     }
     if (this.intro) this.drawIntro(ctx);
-    if (m.phase === 'fulltime' && m.phaseT > 2.5) text(ctx, 'Press Enter to continue', CONFIG.LOGICAL_W / 2, CONFIG.LOGICAL_H * 0.62, 18, '#fff', 'center', 'bold');
+    if (m.phase === 'fulltime' && m.phaseT > 2.5) text(ctx, 'Press Enter to continue', VIEW.w / 2, VIEW.h * 0.62, 18, '#fff', 'center', 'bold');
   }
 
   private drawLetterbox(ctx: CanvasRenderingContext2D) {
     ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, CONFIG.LOGICAL_W, 50); ctx.fillRect(0, CONFIG.LOGICAL_H - 50, CONFIG.LOGICAL_W, 50);
+    ctx.fillRect(0, 0, VIEW.w, 50); ctx.fillRect(0, VIEW.h - 50, VIEW.w, 50);
   }
 
   private drawIntro(ctx: CanvasRenderingContext2D) {
     const m = this.match;
-    const W = CONFIG.LOGICAL_W, H = CONFIG.LOGICAL_H;
+    const W = VIEW.w, H = VIEW.h;
     ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(0, 0, W, H);
     const t = this.introT;
     const a = Math.min(1, t * 1.5);

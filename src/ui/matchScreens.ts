@@ -1,3 +1,4 @@
+import { VIEW } from '../core/view';
 import { CONFIG } from '../config';
 import type { Screen } from './screen';
 import type { App, MatchResult } from './app';
@@ -61,7 +62,7 @@ export class PauseScreen implements Screen {
     if (r === 'back' || this.app.input.ui.pressed.pause) this.app.pop();
   }
   render(ctx: CanvasRenderingContext2D) {
-    ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(0, 0, CONFIG.LOGICAL_W, CONFIG.LOGICAL_H);
+    ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(0, 0, VIEW.w, VIEW.h);
     drawPanel(ctx, 340, 170, 600, 380, 'PAUSED');
     this.menu.draw(ctx, 380, 230, 520, 50);
     drawFooter(ctx, 'Esc / P resume');
@@ -78,8 +79,8 @@ export class PostMatchScreen implements Screen {
   }
   render(ctx: CanvasRenderingContext2D) {
     const m = this.ms.session.match;
-    ctx.fillStyle = 'rgba(0,0,0,0.72)'; ctx.fillRect(0, 0, CONFIG.LOGICAL_W, CONFIG.LOGICAL_H);
-    const W = CONFIG.LOGICAL_W;
+    ctx.fillStyle = 'rgba(0,0,0,0.72)'; ctx.fillRect(0, 0, VIEW.w, VIEW.h);
+    const W = VIEW.w;
     drawPanel(ctx, 190, 70, 900, 580);
     textShadow(ctx, 'FULL TIME', W / 2, 110, 36, '#fde68a', 'center', '900');
     const t0 = m.team(0), t1 = m.team(1);

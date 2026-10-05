@@ -105,9 +105,9 @@ export function clearScore(p: Player, opponents: Player[], attackDir: number): n
 /** Save probability for a keeper facing a shot. */
 export function saveProbability(shotSpeed: number, lateralOffset: number, placementY: number, height: number, skill: number, distance: number): number {
   const speedF = clamp(1.5 - shotSpeed / 40, 0.5, 1);
-  const offsetF = clamp(1.05 - lateralOffset / (CONFIG.KEEPER_DIVE_REACH + 0.8), 0.15, 1);
+  const offsetF = clamp(1.1 - lateralOffset / (CONFIG.KEEPER_DIVE_REACH + 1.6), 0.15, 1);
   const gw = CONFIG.GOAL_WIDTH / 2;
-  const placeF = clamp(1 - (Math.abs(placementY) / gw) * 0.45, 0.4, 1);
+  const placeF = clamp(1 - (Math.abs(placementY) / gw) * 0.35, 0.5, 1);
   const heightF = height > 1.6 ? 0.75 : height > 1.2 ? 0.9 : 1;
   const distF = clamp(0.5 + distance / 16, 0.5, 1.1);
   const p = CONFIG.KEEPER_SAVE_BASE * (0.55 + 0.6 * skill) * speedF * offsetF * placeF * heightF * distF;

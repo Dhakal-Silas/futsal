@@ -16,6 +16,8 @@ export class KeeperBrain {
   reaction = 0;
   diveWillSave = false;
   diveT = 0;
+  catchArmed = false;
+  armTimer = 0;
   constructor(public match: Match, public team: TeamIndex) {
     this.keeper = match.sim.players.find((p) => p.team === team && p.isKeeper)!;
     const teamSkill = clamp((match.team(team).ratings.keeper - 75) / 25, 0, 1);
@@ -33,11 +35,13 @@ export class KeeperBrain {
     const cmd = m.sim.command(k.id);
     const dir = m.attackDir(this.team);
     const gx = this.goalX;
-    if (k.holdTimer > 0) k.holdTimer -= dt;
+    if (k.holdTimer > -20) k.holdTimer -= dt;
     if (m.phase !== 'play' && m.phase !== 'restart' && m.phase !== 'kickoff') { cmd.moveX = 0; cmd.moveY = 0; return; }
+    const human = k.controlledBy >= 0;
 
-    // holding the ball: distribute when the timer runs out
+    // holding the ball: distribute when the timer runs out (a human keeper decides, with a timeout)
     if (b.owner === k.id) {
+      if (human && k.holdTimer > CONFIG.KEEPER_HOLD_TIME - CONFIG.KEEPER_HUMAN_HOLD_MAX) return;
       cmd.hasFace = true; cmd.faceX = dir; cmd.faceY = 0;
       // step toward the edge of the area while holding
       const tx = gx + dir * 3.2, ty = clamp(k.y, -3, 3);
@@ -72,11 +76,18 @@ export class KeeperBrain {
 
     const loose = b.owner < 0;
     const distBall = Math.hypot(b.x - k.x, b.y - k.y);
+    // armed to catch a shot coming straight at the body
+    if (this.catchArmed) {
+      this.armTimer -= dt;
+      if (this.armTimer <= 0 || !loose) this.catchArmed = false;
+      else if (distBall < 1.15 && b.z < 2.1 && b.kickCooldown < 0.2) { this.catchArmed = false; this.save(b.z, true); return; }
+      else { cmd.moveX = 0; cmd.moveY = 0; cmd.hasFace = true; cmd.faceX = b.x - k.x; cmd.faceY = b.y - k.y; return; }
+    }
     const distGoalBall = Math.hypot(b.x - gx, b.y);
     const towardGoal = b.vx * dir < -1;
 
     // catch a slow/loose ball nearby
-    if (loose && distBall < CONFIG.KEEPER_CATCH_RADIUS && b.z < 1.8 && b.speed < 12 && b.kickCooldown <= 0) {
+    if (loose && distBall < CONFIG.KEEPER_CATCH_RADIUS * 1.15 && b.z < 1.9 && b.speed < 15 && b.kickCooldown <= 0) {
       this.catchBall(); return;
     }
 
@@ -130,7 +141,7 @@ export class KeeperBrain {
     if (owner && owner.team !== this.team && d < 9) depth += 1.0 + (9 - d) * 0.25;
     depth = Math.min(depth, d - 1.6);
     let tx = gx + (dx / d) * depth, ty = (dy / d) * depth;
-    ty = clamp(ty, -CONFIG.GOAL_WIDTH / 2 - 0.5, CONFIG.GOAL_WIDTH / 2 + 0.5);
+    ty = clamp(ty * 0.8, -CONFIG.GOAL_WIDTH / 2 * 0.7, CONFIG.GOAL_WIDTH / 2 * 0.7);
     tx = clamp(tx, Math.min(gx, gx + dir * 7), Math.max(gx, gx + dir * 7));
     if (m.phase !== 'play') { tx = gx + dir * 1.2; ty = 0; }
     arrive(k, cmd, tx, ty, 0.8, 0.12);
@@ -149,15 +160,11 @@ export class KeeperBrain {
     const distance = Math.hypot(b.x - k.x, b.y - k.y);
     const p = saveProbability(b.speed, offset, yG, zI, this.skill, distance);
     this.diveWillSave = m.sim.rng.next() < p;
-    if (offset < 0.45 && zI < 1.9) {
-      // no need to dive: catch when it arrives (or let it through on a failed roll)
-      if (this.diveWillSave) { this.catchWhenClose = true; }
-      else { this.catchWhenClose = false; this.dodge = true; }
+    if (offset < 0.55 && zI < 2.0) {
+      // straight at the body: set and catch (or fumble on a failed roll: a small dive the wrong way)
       cmd.moveX = 0; cmd.moveY = 0;
-      cmd.dive = { x: k.x + (b.x - k.x) * 0.2, y: yI + (this.diveWillSave ? 0 : (yI > k.y ? -1 : 1) * 0.9) };
-      cmd.dive = null;
-      // a small dive/stance even for central shots looks better
-      cmd.dive = { x: k.x, y: this.diveWillSave ? yI : k.y + (yI >= k.y ? -0.6 : 0.6) };
+      if (this.diveWillSave || m.sim.rng.next() < 0.5) { this.catchArmed = true; this.armTimer = Math.max(0.3, tG + 0.3); this.diveWillSave = true; }
+      else cmd.dive = { x: k.x, y: k.y + (yI >= k.y ? -0.7 : 0.7) };
       return;
     }
     // dive toward the intercept point (or deliberately short / wrong side when the roll fails)
@@ -169,8 +176,6 @@ export class KeeperBrain {
     }
     cmd.dive = { x: k.x + (b.x - k.x) * 0.15, y: ty };
   }
-  private catchWhenClose = false;
-  private dodge = false;
 
   private catchBall() {
     const m = this.match, k = this.keeper, b = m.ball;
@@ -182,14 +187,14 @@ export class KeeperBrain {
     m.events.push({ type: 'catch', team: this.team, playerId: k.id, x: k.x, y: k.y, strength: 0.4 });
   }
 
-  private save(height: number) {
+  private save(height: number, forceHold = false) {
     const m = this.match, k = this.keeper, b = m.ball;
-    const r = m.sim.rng.next();
+    const r = forceHold ? 0 : m.sim.rng.next();
     const dir = m.attackDir(this.team);
     m.stats[this.team].saves++;
     if (b.kickType === 'shoot' && b.lastTouchTeam !== this.team && b.lastTouchTeam >= 0) m.stats[b.lastTouchTeam as TeamIndex].shotsOnTarget++;
     m.events.push({ type: 'save', team: this.team, playerId: k.id, x: k.x, y: k.y, strength: 1 });
-    if (r < 0.42 && height < 1.6) {
+    if (r < 0.6 && height < 1.7) {
       // hold
       gainPossession(k, b, m.sim);
       b.vx = 0; b.vy = 0; b.vz = 0;

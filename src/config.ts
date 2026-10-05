@@ -36,11 +36,11 @@ export const CONFIG = {
 
   // --- Player movement ---
   PLAYER_RADIUS: 0.35,
-  PLAYER_JOG_SPEED: 5.6,
-  PLAYER_SPRINT_SPEED: 7.8,
-  PLAYER_ACCEL: 22,
-  PLAYER_DECEL: 28,
-  PLAYER_TURN_RATE: 11, // rad/s
+  PLAYER_JOG_SPEED: 4.7,
+  PLAYER_SPRINT_SPEED: 6.6,
+  PLAYER_ACCEL: 15,
+  PLAYER_DECEL: 22,
+  PLAYER_TURN_RATE: 9, // rad/s
   PLAYER_DRIBBLE_SPEED_MULT: 0.9,
   PLAYER_SEPARATION_RADIUS: 0.8,
   STAMINA_MAX: 100,
@@ -50,7 +50,7 @@ export const CONFIG = {
   STAMINA_TIRED_SPEED_MULT: 0.8,
 
   // --- Ball control ---
-  CONTROL_RADIUS: 0.75, // where a player can take a first touch
+  CONTROL_RADIUS: 0.85, // where a player can take a first touch
   CONTROL_MAX_BALL_SPEED: 14, // faster balls can't be controlled cleanly
   CONTROL_MAX_BALL_HEIGHT: 1.3,
   DRIBBLE_OFFSET: 0.55, // ball sits this far in front of the carrier
@@ -59,14 +59,14 @@ export const CONFIG = {
   POSSESSION_TOUCH_COOLDOWN: 0.25, // after kicking, can't immediately re-control
 
   // --- Kicks ---
-  PASS_MIN_SPEED: 9,
-  PASS_MAX_SPEED: 17,
-  THROUGH_SPEED: 15,
+  PASS_MIN_SPEED: 8,
+  PASS_MAX_SPEED: 14.5,
+  THROUGH_SPEED: 13.5,
   THROUGH_LEAD_TIME: 0.75,
-  SHOT_MIN_SPEED: 14,
-  SHOT_MAX_SPEED: 27,
+  SHOT_MIN_SPEED: 13,
+  SHOT_MAX_SPEED: 24,
   SHOT_LOFT: 0.18, // vertical component fraction
-  CROSS_SPEED: 15,
+  CROSS_SPEED: 14,
   CROSS_LOFT: 0.62,
   LOB_PASS_LOFT: 0.45,
   CHARGE_TIME: 0.8, // s to full power
@@ -78,7 +78,7 @@ export const CONFIG = {
 
   // --- Slide tackle ---
   SLIDE_DURATION: 0.45,
-  SLIDE_SPEED: 8.5,
+  SLIDE_SPEED: 7.5,
   SLIDE_REACH: 1.0,
   SLIDE_RECOVERY: 0.55,
   SLIDE_COOLDOWN: 1.2,
@@ -88,15 +88,16 @@ export const CONFIG = {
 
   // --- Keeper ---
   KEEPER_LINE_DEPTH: 0.9, // m in front of goal line when the ball is far
-  KEEPER_MAX_STEP_OUT: 3.5,
-  KEEPER_SPEED: 5.5,
+  KEEPER_MAX_STEP_OUT: 2.4,
+  KEEPER_SPEED: 4.8,
   KEEPER_DIVE_SPEED: 9,
   KEEPER_DIVE_DURATION: 0.55,
   KEEPER_DIVE_REACH: 1.6,
   KEEPER_CATCH_RADIUS: 0.9,
-  KEEPER_HOLD_TIME: 1.4, // s before distributing
-  KEEPER_REACTION_BASE: 0.18,
-  KEEPER_SAVE_BASE: 0.72,
+  KEEPER_HOLD_TIME: 1.2, // s before the CPU keeper distributes
+  KEEPER_HUMAN_HOLD_MAX: 6, // a human-controlled keeper is auto-distributed after this long
+  KEEPER_REACTION_BASE: 0.13,
+  KEEPER_SAVE_BASE: 0.82,
   KEEPER_THROW_SPEED: 13,
   KEEPER_KICK_SPEED: 20,
 
@@ -121,7 +122,7 @@ export const CONFIG = {
   // --- Camera ---
   CAM_FOLLOW_STIFFNESS: 4.5,
   CAM_LOOKAHEAD: 0.35, // s of ball velocity
-  CAM_BASE_ZOOM: 40, // px per meter at zoom 1
+  CAM_BASE_ZOOM: 38, // px per meter at zoom 1
   CAM_KICKOFF_ZOOM: 0.78,
   CAM_GOAL_ZOOM: 1.25,
   CAM_ZOOM_STIFFNESS: 2.5,
@@ -129,6 +130,8 @@ export const CONFIG = {
 
   // --- AI shared ---
   AI_ROLE_UPDATE_INTERVAL: 0.25,
+  AI_TEAMMATE_SPACING: 3.2, // teammates steer apart below this distance
+  DEFAULT_TEAM_SIZE: 7,
   AI_SHOOT_RANGE: 11,
   AI_PRESS_RADIUS: 7,
   AI_SUPPORT_SPREAD: 5,

@@ -1,3 +1,4 @@
+import { VIEW } from '../core/view';
 import { CONFIG } from '../config';
 import type { Screen } from './screen';
 import type { App } from './app';
@@ -11,7 +12,7 @@ import { Effects } from '../render/effects';
 import { Camera } from '../core/camera';
 import { DIFFICULTIES } from '../ai/difficulty';
 import { HALF_OPTIONS } from '../game/settings';
-import { FORMATIONS } from '../sim/formation';
+import { formationsForSize } from '../sim/formation';
 import type { TeamInfo } from '../sim/types';
 
 /** Tournament options after picking the team: group stage, classico mode, difficulty, half length. */
@@ -25,8 +26,8 @@ export class TournamentSetupScreen implements Screen {
       { label: 'Clásico mode', value: () => (s.classico ? 'On' : 'Off'), onChange: () => { s.classico = !s.classico; app.save(); }, hint: 'Keeps Real Madrid and FC Barcelona apart until the FINAL.' },
       { label: 'Difficulty', value: () => s.difficulty, onChange: (d) => { s.difficulty = cycle(DIFFICULTIES, s.difficulty, d); app.save(); } },
       { label: 'Half length', value: () => `${s.halfMinutes} min`, onChange: (d) => { s.halfMinutes = cycle(HALF_OPTIONS, s.halfMinutes, d); app.save(); } },
-      { label: 'Formation', value: () => FORMATIONS.find((f) => f.id === s.formationP1)?.name ?? s.formationP1, onChange: (d) => { const i = FORMATIONS.findIndex((f) => f.id === s.formationP1); s.formationP1 = FORMATIONS[(i + d + FORMATIONS.length) % FORMATIONS.length].id; app.save(); } },
-      { label: 'Start the draw', onSelect: () => { const t = Tournament.create(team.id, s.classico, s.groupStage, s.halfMinutes, s.difficulty, s.formationP1); t.save(); onStart(t); } },
+      { label: 'Formation', value: () => formationsForSize(s.teamSize).find((f) => f.id === s.formationP1)?.name ?? formationsForSize(s.teamSize)[0].name, onChange: (d) => { const L = formationsForSize(s.teamSize); const i = Math.max(0, L.findIndex((f) => f.id === s.formationP1)); s.formationP1 = L[(i + d + L.length) % L.length].id; app.save(); } },
+      { label: 'Start the draw', onSelect: () => { const t = Tournament.create(team.id, s.classico, s.groupStage, s.halfMinutes, s.difficulty, s.formationP1, undefined, s.teamSize); t.save(); onStart(t); } },
     ]);
   }
   update(dt: number) { this.t += dt; if (this.menu.update(this.app.input, this.app.audio) === 'back') this.app.pop(); }
@@ -34,7 +35,7 @@ export class TournamentSetupScreen implements Screen {
     drawBackground(ctx, this.t);
     drawTitle(ctx, 'CHAMPIONS CUP', `Playing as ${this.team.name}`);
     drawPanel(ctx, 290, 150, 700, 400);
-    drawCrest(ctx, this.team, CONFIG.LOGICAL_W / 2, 200, 70);
+    drawCrest(ctx, this.team, VIEW.w / 2, 200, 70);
     this.menu.draw(ctx, 330, 270, 620, 44, this.t);
     drawFooter(ctx, '← → change   •   Enter select   •   Esc back');
   }
@@ -143,7 +144,7 @@ export class BracketScreen implements Screen {
     if (st.stage === 'groups' && st.groups && st.groupMatches) this.renderGroups(ctx);
     else if (st.bracket) this.renderBracket(ctx);
     this.menu.draw(ctx, 380, 620, 520, 36);
-    if (this.tour.userEliminated && !this.tour.champion) text(ctx, 'You have been eliminated.', CONFIG.LOGICAL_W / 2, 590, 16, '#f87171', 'center', 'bold');
+    if (this.tour.userEliminated && !this.tour.champion) text(ctx, 'You have been eliminated.', VIEW.w / 2, 590, 16, '#f87171', 'center', 'bold');
   }
   private renderGroups(ctx: CanvasRenderingContext2D) {
     const st = this.tour.state;
@@ -174,7 +175,7 @@ export class BracketScreen implements Screen {
     const br = this.tour.bracket!;
     const st = this.tour.state;
     const rounds = br.rounds.length;
-    const W = CONFIG.LOGICAL_W;
+    const W = VIEW.w;
     const colW = Math.min(300, (W - 80) / rounds);
     const top = 160, bottom = 580;
     br.rounds.forEach((r, ri) => {
@@ -236,13 +237,13 @@ export class ChampionScreen implements Screen {
   enter() { this.app.audio.fanfare(); }
   update(dt: number) {
     this.t += dt;
-    if (this.userWon && this.t < 10) this.effects.confetti(this.cam.wx(Math.random() * CONFIG.LOGICAL_W), this.cam.wy(-40), 3, [this.team.kit.primary, this.team.kit.secondary, '#fde68a', '#fff'], 0.3);
+    if (this.userWon && this.t < 10) this.effects.confetti(this.cam.wx(Math.random() * VIEW.w), this.cam.wy(-40), 3, [this.team.kit.primary, this.team.kit.secondary, '#fde68a', '#fff'], 0.3);
     this.effects.update(dt);
     if (this.t > 1.5 && this.app.input.ui.pressed.confirm) { this.app.audio.ui('confirm'); this.onDone(); }
   }
   render(ctx: CanvasRenderingContext2D) {
     drawBackground(ctx, this.t);
-    const W = CONFIG.LOGICAL_W, H = CONFIG.LOGICAL_H;
+    const W = VIEW.w, H = VIEW.h;
     textShadow(ctx, this.userWon ? 'CHAMPIONS!' : 'TOURNAMENT OVER', W / 2, 90, 60, '#fde68a', 'center', '900');
     text(ctx, this.userWon ? `${this.team.name} win the Champions Cup!` : `${this.team.name} are the champions.`, W / 2, 145, 22, '#fff', 'center', 'bold');
     drawTrophy(ctx, W / 2, H * 0.55, 1 + Math.sin(this.t * 2) * 0.03, this.t);

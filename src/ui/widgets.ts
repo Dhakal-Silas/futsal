@@ -1,3 +1,4 @@
+import { VIEW } from '../core/view';
 import { CONFIG } from '../config';
 import type { InputManager } from '../core/input';
 import type { AudioManager } from '../core/audio';
@@ -54,7 +55,7 @@ export class Menu {
 }
 
 export function drawBackground(ctx: CanvasRenderingContext2D, t: number) {
-  const W = CONFIG.LOGICAL_W, H = CONFIG.LOGICAL_H;
+  const W = VIEW.w, H = VIEW.h;
   const g = ctx.createLinearGradient(0, 0, 0, H);
   g.addColorStop(0, '#0f2a1a'); g.addColorStop(1, '#071510');
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
@@ -69,12 +70,12 @@ export function drawBackground(ctx: CanvasRenderingContext2D, t: number) {
 }
 
 export function drawTitle(ctx: CanvasRenderingContext2D, title: string, sub?: string) {
-  textShadow(ctx, title, CONFIG.LOGICAL_W / 2, 70, 44, '#fde68a', 'center', '900');
-  if (sub) text(ctx, sub, CONFIG.LOGICAL_W / 2, 112, 18, '#9ca3af', 'center');
+  textShadow(ctx, title, VIEW.w / 2, 70, 44, '#fde68a', 'center', '900');
+  if (sub) text(ctx, sub, VIEW.w / 2, 112, 18, '#9ca3af', 'center');
 }
 
 export function drawFooter(ctx: CanvasRenderingContext2D, s: string) {
-  text(ctx, s, CONFIG.LOGICAL_W / 2, CONFIG.LOGICAL_H - 24, 14, '#9ca3af', 'center');
+  text(ctx, s, VIEW.w / 2, VIEW.h - 24, 14, '#9ca3af', 'center');
 }
 
 export function drawPanel(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, title?: string) {

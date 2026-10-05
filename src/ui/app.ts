@@ -29,6 +29,6 @@ export class App {
     return new MatchSession(opts, this.input, this.audio, { quality: this.settings.quality, showHints: this.settings.showHints, minimap: this.settings.minimap });
   }
   matchOptions(teams: [TeamInfo, TeamInfo], formations: [string, string], humanSlots: [number, number], knockout: boolean, extra: Partial<MatchOptions> = {}): MatchOptions {
-    return { teams, formations, halfMinutes: this.settings.halfMinutes, humanSlots, difficulty: this.settings.difficulty, knockout, seed: (Date.now() & 0xffffff) ^ 0x51, ...extra };
+    return { teams, formations, halfMinutes: this.settings.halfMinutes, humanSlots, difficulty: this.settings.difficulty, knockout, seed: (Date.now() & 0xffffff) ^ 0x51, teamSize: this.settings.teamSize, ...extra };
   }
 }

@@ -50,7 +50,7 @@ export interface PlayerInputState {
   holdTime: Record<GameAction, number>;
 }
 
-export type UiAction = 'up' | 'down' | 'left' | 'right' | 'confirm' | 'back' | 'pause' | 'debug' | 'mute' | 'any';
+export type UiAction = 'up' | 'down' | 'left' | 'right' | 'confirm' | 'back' | 'pause' | 'debug' | 'mute' | 'fullscreen' | 'any';
 
 export interface UiInputState {
   pressed: Record<UiAction, boolean>;
@@ -90,7 +90,7 @@ export class InputManager {
   }
 
   private emptyUi(): Record<UiAction, boolean> {
-    return { up: false, down: false, left: false, right: false, confirm: false, back: false, pause: false, debug: false, mute: false, any: false };
+    return { up: false, down: false, left: false, right: false, confirm: false, back: false, pause: false, debug: false, mute: false, fullscreen: false, any: false };
   }
 
   private makeState(): PlayerInputState {
@@ -120,7 +120,7 @@ export class InputManager {
   }
 
   private shouldPrevent(code: string) {
-    return code.startsWith('Arrow') || code === 'Space' || code === 'Tab' || code.startsWith('Numpad') || code === 'Slash' || code === 'Quote';
+    return code === 'F11' || code.startsWith('Arrow') || code === 'Space' || code === 'Tab' || code.startsWith('Numpad') || code === 'Slash' || code === 'Quote';
   }
 
   captureNextKey(cb: (code: string) => void) { this.captureCb = cb; }
@@ -230,7 +230,8 @@ export class InputManager {
       if (c === 'Escape' || c === 'Backspace') { ui.back = true; }
       if (c === 'Escape' || c === 'KeyP') ui.pause = true;
       if (c === 'F3') ui.debug = true;
-      if (c === 'KeyM' ) ui.mute = true;
+      if (c === 'KeyM') ui.mute = true;
+      if (c === 'KeyF' || c === 'F11') ui.fullscreen = true;
       if (c === 'ArrowUp' || c === 'KeyW') ui.up = true;
       if (c === 'ArrowDown' || c === 'KeyS') ui.down = true;
       if (c === 'ArrowLeft' || c === 'KeyA') ui.left = true;

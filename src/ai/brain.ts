@@ -64,7 +64,7 @@ export class PlayerBrain {
       case 'MakeRun': {
         const carrier = b.owner >= 0 ? m.player(b.owner) : null;
         const cx = carrier ? carrier.x : b.x;
-        let tx = clamp(cx + dir * 9, -HALF_LENGTH + 2, HALF_LENGTH - 3);
+        let tx = clamp(cx + dir * 8, -HALF_LENGTH + 2, HALF_LENGTH - 3);
         m.anchor(p, 1, tmp);
         let ty = tmp.y;
         // run into the half-space away from the nearest opponent
@@ -81,9 +81,28 @@ export class PlayerBrain {
         break;
       }
     }
+    // keep spacing from teammates (never bunch around the ball)
+    if (p.role !== 'Carrier' && p.role !== 'ChaseBall' && p.role !== 'PressBallCarrier') this.separateFromTeammates(cmd);
     // when stationary, face the ball
     if (Math.hypot(cmd.moveX, cmd.moveY) < 0.1) { cmd.hasFace = true; cmd.faceX = b.x - p.x; cmd.faceY = b.y - p.y; }
     this.stayOnPitch(cmd);
+  }
+
+  private separateFromTeammates(cmd: PlayerCommand) {
+    const p = this.player;
+    const r = CONFIG.AI_TEAMMATE_SPACING;
+    let fx = 0, fy = 0;
+    for (const o of this.team.players) {
+      if (o === p || o.isKeeper) continue;
+      const dx = p.x - o.x, dy = p.y - o.y;
+      const d = Math.hypot(dx, dy);
+      if (d < r && d > 0.01) { const k = (r - d) / r; fx += (dx / d) * k; fy += (dy / d) * k; }
+    }
+    if (fx !== 0 || fy !== 0) {
+      cmd.moveX += fx * 1.2; cmd.moveY += fy * 1.2;
+      const l = Math.hypot(cmd.moveX, cmd.moveY);
+      if (l > 1) { cmd.moveX /= l; cmd.moveY /= l; }
+    }
   }
 
   private stayOnPitch(cmd: PlayerCommand) {
@@ -113,12 +132,12 @@ export class PlayerBrain {
       const pressure = nearestDist(p.x, p.y, opponents);
       // hold the ball briefly after receiving it (looks natural), unless under pressure or a great chance
       const held = m.sim.time - this.lastReceive;
-      const justGot = held < 0.35 && sShoot < 0.9;
+      const justGot = held < (pressure < 1.5 ? 0.3 : 0.7) && sShoot < 0.9;
       (globalThis as any).__aiLog?.(`t=${m.sim.time.toFixed(1)} p=${p.team}/${p.index} held=${held.toFixed(2)} press=${pressure.toFixed(1)} shoot=${sShoot.toFixed(2)} pass=${sPass.toFixed(2)} drib=${sDrib.toFixed(2)} clear=${sClear.toFixed(2)} justGot=${justGot} xdir=${(p.x*dir).toFixed(1)}`);
       if (!justGot) {
         if (sShoot > 0.5 && sShoot >= sPass * 0.8) { cmd.kick = this.makeShot(shoot.aimY); return; }
         if (sClear > 0.6 && sClear > sPass) { cmd.kick = this.makeClear(); return; }
-        if (bestPass && sPass > Math.max(0.6, sDrib + 0.12)) { cmd.kick = this.makePass(bestPass); return; }
+        if (bestPass && sPass > Math.max(0.6, sDrib + 0.22)) { cmd.kick = this.makePass(bestPass); return; }
         if (bestPass && held > 2.5 && sPass > 0.45) { cmd.kick = this.makePass(bestPass); return; }
       }
       this.dribbleX = drib.dirX; this.dribbleY = drib.dirY;
@@ -140,7 +159,7 @@ export class PlayerBrain {
     const d = Math.hypot(gx - p.x, aimY - p.y);
     const power = clamp(0.45 + d / 25 + m.sim.rng.next() * 0.25, 0.4, 0.95);
     const a = assistedShotDir(p.x, p.y, gx - p.x, aimY - p.y, dir, 0.01);
-    const k = makeKick('shoot', power, a.x, a.y, -1, this.noise(par.shotNoise));
+    const k = makeKick('shoot', power, a.x, a.y, -1, this.noise(par.shotNoise) * 1.4 + 0.02);
     return k;
   }
 
@@ -208,12 +227,12 @@ export class PlayerBrain {
       // between the opponent and our goal
       const gdx = goalX - o.x, gdy = -o.y;
       const gl = Math.hypot(gdx, gdy) || 1;
-      const tight = 1.2 + (1 - par.markingTightness) * 2.5;
+      const tight = 1.8 + (1 - par.markingTightness) * 2.5;
       const mx = o.x + (gdx / gl) * tight, my = o.y + (gdy / gl) * tight;
       const w = par.positionDiscipline;
       // discipline blends between pure marking and the formation anchor
-      tx = mx * (1 - w * 0.35) + tx * w * 0.35;
-      ty = my * (1 - w * 0.35) + ty * w * 0.35;
+      tx = mx * (1 - w * 0.5) + tx * w * 0.5;
+      ty = my * (1 - w * 0.5) + ty * w * 0.5;
     }
     const d = arrive(p, cmd, tx, ty, 1.5, 0.3);
     cmd.sprint = d > 6 && this.sprintDecision;
@@ -239,7 +258,7 @@ export class PlayerBrain {
         let s = Math.min(6, nearestDist(x, y, opponents)) * 0.4;
         if (carrier) {
           const dc = Math.hypot(carrier.x - x, carrier.y - y);
-          if (dc < 4) s -= (4 - dc);
+          if (dc < 5.5) s -= (5.5 - dc) * 1.5;
           if (dc > 15) s -= (dc - 15) * 0.3;
           // lane from carrier
           let lane = 3;

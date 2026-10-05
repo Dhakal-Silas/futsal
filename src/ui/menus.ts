@@ -1,3 +1,4 @@
+import { VIEW } from '../core/view';
 import { CONFIG } from '../config';
 import type { Screen } from './screen';
 import type { App } from './app';
@@ -19,7 +20,7 @@ export class TitleScreen implements Screen {
     const a = TEAMS[Math.floor(Math.random() * TEAMS.length)];
     let b = TEAMS[Math.floor(Math.random() * TEAMS.length)];
     if (b === a) b = TEAMS[(TEAMS.indexOf(a) + 1) % TEAMS.length];
-    this.demo = this.app.createSession(this.app.matchOptions([a, b], ['2-2', '1-2-1'], [-1, -1], false, { halfMinutes: 2, difficulty: 'Hard', demo: true }));
+    this.demo = this.app.createSession(this.app.matchOptions([a, b], ['2-2-2', '3-2-1'], [-1, -1], false, { halfMinutes: 2, difficulty: 'Hard', demo: true }));
     this.demo.hud.showHints = false; this.demo.hud.minimap = false;
   }
   update(dt: number) {
@@ -34,8 +35,8 @@ export class TitleScreen implements Screen {
   }
   render(ctx: CanvasRenderingContext2D, alpha: number, frameDt: number) {
     if (this.demo) this.demo.render(ctx, alpha, frameDt); else drawBackground(ctx, this.t);
-    ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(0, 0, CONFIG.LOGICAL_W, CONFIG.LOGICAL_H);
-    const W = CONFIG.LOGICAL_W, H = CONFIG.LOGICAL_H;
+    ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(0, 0, VIEW.w, VIEW.h);
+    const W = VIEW.w, H = VIEW.h;
     textShadow(ctx, 'STICKMAN', W / 2, H * 0.3, 92, '#fde68a', 'center', '900');
     textShadow(ctx, 'FUTSAL 5v5', W / 2, H * 0.3 + 86, 64, '#ffffff', 'center', '900');
     const blink = Math.sin(this.t * 4) > -0.2;
@@ -62,7 +63,7 @@ export class MainMenuScreen implements Screen {
     drawTitle(ctx, 'STICKMAN FUTSAL 5v5', 'Main menu');
     drawPanel(ctx, 340, 150, 600, 360);
     this.menu.draw(ctx, 380, 195, 520, 50, this.t);
-    drawFooter(ctx, `Difficulty: ${this.app.settings.difficulty}  •  Halves: ${this.app.settings.halfMinutes} min  •  M = mute  •  F3 = debug`);
+    drawFooter(ctx, `Difficulty: ${this.app.settings.difficulty}  •  Halves: ${this.app.settings.halfMinutes} min  •  ${this.app.settings.teamSize}-a-side  •  F = fullscreen  •  M = mute  •  F3 = debug`);
   }
 }
 
@@ -74,6 +75,7 @@ export class SettingsScreen implements Screen {
     this.menu = new Menu([
       { label: 'Difficulty', value: () => s.difficulty, onChange: (d) => { s.difficulty = cycle(DIFFICULTIES, s.difficulty, d); app.save(); }, hint: 'Easy is clearly beatable; Legend is hard but fair.' },
       { label: 'Half length', value: () => `${s.halfMinutes} min`, onChange: (d) => { s.halfMinutes = cycle(HALF_OPTIONS, s.halfMinutes, d); app.save(); } },
+      { label: 'Players per side', value: () => `${s.teamSize} (${s.teamSize - 1} + GK)`, onChange: () => { s.teamSize = s.teamSize === 7 ? 5 : 7; app.save(); }, hint: '7-a-side (default) or classic 5-a-side futsal.' },
       { label: 'Sound volume', value: () => `${Math.round(s.volume * 100)}%`, onChange: (d) => { s.volume = Math.max(0, Math.min(1, Math.round((s.volume + d * 0.1) * 10) / 10)); app.audio.setVolume(s.volume); app.save(); } },
       { label: 'Mute', value: () => (app.audio.muted ? 'On' : 'Off'), onChange: () => app.audio.toggleMute() },
       { label: 'Particles', value: () => (s.quality > 0 ? 'On' : 'Off'), onChange: () => { s.quality = s.quality > 0 ? 0 : 1; app.save(); } },
@@ -88,8 +90,8 @@ export class SettingsScreen implements Screen {
   render(ctx: CanvasRenderingContext2D) {
     drawBackground(ctx, this.t);
     drawTitle(ctx, 'SETTINGS');
-    drawPanel(ctx, 290, 140, 700, 520);
-    this.menu.draw(ctx, 330, 180, 620, 46, this.t);
+    drawPanel(ctx, VIEW.w / 2 - 350, 140, 700, 560);
+    this.menu.draw(ctx, VIEW.w / 2 - 310, 180, 620, 46, this.t);
     drawFooter(ctx, '← → change   •   Enter select   •   Esc back');
   }
 }

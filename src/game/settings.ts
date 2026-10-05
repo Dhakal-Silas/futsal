@@ -15,11 +15,12 @@ export interface Settings {
   classico: boolean;
   groupStage: boolean;
   padP1: number; padP2: number;
+  teamSize: number;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   difficulty: 'Medium', halfMinutes: 3, volume: 0.7, quality: 1, showHints: true, minimap: true,
-  lastTeamP1: 'rma', lastTeamP2: 'fcb', formationP1: '2-2', formationP2: '1-2-1', classico: false, groupStage: false, padP1: 0, padP2: 1,
+  lastTeamP1: 'rma', lastTeamP2: 'fcb', formationP1: '2-2-2', formationP2: '3-2-1', classico: false, groupStage: false, padP1: 0, padP2: 1, teamSize: 7,
 };
 
 export function loadSettings(): Settings { return loadJSON('settings', DEFAULT_SETTINGS); }

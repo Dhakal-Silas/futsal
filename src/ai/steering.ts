@@ -12,7 +12,7 @@ export function arrive(p: Player, cmd: PlayerCommand, tx: number, ty: number, sl
 }
 
 /** Point where the player can intercept the rolling ball (first reachable future position). */
-export function interceptPoint(p: Player, bx: number, by: number, bvx: number, bvy: number, out: { x: number; y: number }, maxSpeed = CONFIG.PLAYER_SPRINT_SPEED) {
+export function interceptPoint(p: Player, bx: number, by: number, bvx: number, bvy: number, out: { x: number; y: number }, maxSpeed: number = CONFIG.PLAYER_SPRINT_SPEED) {
   let x = bx, y = by, vx = bvx, vy = bvy;
   const step = 1 / 20;
   for (let t = 0; t < 2.5; t += step) {

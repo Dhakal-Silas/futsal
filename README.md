@@ -1,6 +1,7 @@
 # Stickman Futsal 5v5
 
-A complete 5v5 futsal game with procedurally drawn stickmen, playable in the browser.
+A complete futsal game with procedurally drawn stickmen, playable in the browser. 7-a-side by
+default (6 outfield players + keeper), classic 5-a-side selectable in Settings.
 TypeScript + Vite + Canvas 2D, no game engine, no external art or audio assets.
 
 ## Run
@@ -38,10 +39,13 @@ npm test         # unit tests (ball physics, AI helpers, bracket logic, full hea
 | Pause | Esc or P | Esc or P | Start |
 
 Keys can be rebound from the Controls screen (saved to localStorage).
-`M` toggles mute, `F3` toggles the debug overlay (FPS, AI roles, ball speed, formation anchors).
+`F` toggles fullscreen, `M` toggles mute, `F3` toggles the debug overlay (FPS, AI roles, ball speed,
+formation anchors). The canvas always fills the window at any aspect ratio.
 
-Goalkeepers are automatic for both teams. When your team has the ball you control the ball
-carrier; control follows the ball to the receiver as soon as a pass is released. When defending
+Goalkeepers position, dive and catch automatically. When your keeper holds the ball (after a
+catch or for a goal clearance) you control the distribution: Pass throws to the teammate in the
+aimed direction, Shoot or Cross kicks long. When your team has the ball you control the ball
+carrier, and a pass receiver runs to meet the ball unless you steer them away; control follows the ball to the receiver as soon as a pass is released. When defending
 you control the defender nearest to the ball (Space switches manually). A triangle marker and a
 ring show the active player, a dashed line shows who will receive the next pass, and a bar near
 the player shows shot/pass power while charging.

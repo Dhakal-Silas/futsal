@@ -1,6 +1,6 @@
-import { CONFIG } from '../config';
+import { VIEW, updateViewSize } from './view';
 
-/** Handles pixel-perfect scaling of a 1280x720 logical canvas to the window with devicePixelRatio. */
+/** Scales the logical canvas (720 px tall, width follows the window aspect) to fill the window with devicePixelRatio. */
 export class CanvasScaler {
   ctx: CanvasRenderingContext2D;
   scale = 1;
@@ -14,16 +14,16 @@ export class CanvasScaler {
   resize() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const ww = window.innerWidth, wh = window.innerHeight;
-    const s = Math.min(ww / CONFIG.LOGICAL_W, wh / CONFIG.LOGICAL_H);
+    updateViewSize(ww, wh);
+    const s = Math.min(ww / VIEW.w, wh / VIEW.h);
     this.scale = s;
-    const cssW = Math.floor(CONFIG.LOGICAL_W * s), cssH = Math.floor(CONFIG.LOGICAL_H * s);
+    const cssW = Math.floor(VIEW.w * s), cssH = Math.floor(VIEW.h * s);
     this.canvas.style.width = cssW + 'px';
     this.canvas.style.height = cssH + 'px';
     this.canvas.width = Math.floor(cssW * dpr);
     this.canvas.height = Math.floor(cssH * dpr);
     this.ctx.setTransform(s * dpr, 0, 0, s * dpr, 0, 0);
   }
-  /** Reset the transform each frame (in case any code messed with it). */
   begin() {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     this.ctx.setTransform(this.scale * dpr, 0, 0, this.scale * dpr, 0, 0);

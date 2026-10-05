@@ -1,3 +1,4 @@
+import { VIEW, updateViewSize, toggleFullscreen } from './core/view';
 import { CONFIG } from './config';
 import { CanvasScaler } from './core/canvas';
 import { GameLoop } from './core/loop';
@@ -11,6 +12,7 @@ import { MatchScreen } from './ui/matchScreens';
 import { TournamentSetupScreen, DrawScreen, BracketScreen, ChampionScreen } from './ui/tournamentScreens';
 import { Tournament } from './tournament/tournament';
 import { teamById, TEAMS } from './sim/teams';
+import { formationsForSize } from './sim/formation';
 import { Menu, drawBackground, drawFooter, drawPanel, drawTitle } from './ui/widgets';
 import type { Screen } from './ui/screen';
 import type { TeamInfo } from './sim/types';
@@ -48,7 +50,7 @@ function mainMenu() {
     tournament: () => tournamentMenu(),
     demo: () => app.push(new TeamSelectScreen(app, 'demo', (teams) => {
       const t = teams as [TeamInfo, TeamInfo];
-      startMatch(app.matchOptions(t, ['2-2', '1-2-1'], [-1, -1], false, { difficulty: 'Hard' }), () => mainMenu());
+      startMatch(app.matchOptions(t, [app.settings.formationP1, app.settings.formationP2], [-1, -1], false, { difficulty: 'Hard' }), () => mainMenu());
     })),
     settings: () => app.push(new SettingsScreen(app)),
     controls: () => app.push(new ControlsScreen(app)),
@@ -100,11 +102,13 @@ function runTournament(tour: Tournament) {
     const teams: [TeamInfo, TeamInfo] = [a, b];
     const humanSlots: [number, number] = userIsA ? [0, -1] : [-1, 0];
     const userFormation = tour.state.formation;
-    const cpuFormation = ['2-2', '1-2-1', '3-1', '1-3'][Math.floor(Math.random() * 4)];
+    const size = tour.state.teamSize ?? 7;
+    const sizeList = formationsForSize(size);
+    const cpuFormation = sizeList[Math.floor(Math.random() * sizeList.length)].id;
     const formations: [string, string] = userIsA ? [userFormation, cpuFormation] : [cpuFormation, userFormation];
     const knockout = nm.kind === 'knockout';
     const isFinal = knockout && tour.userInFinal;
-    const opts = app.matchOptions(teams, formations, humanSlots, knockout, { halfMinutes: tour.state.halfMinutes, difficulty: tour.state.difficulty as any, isFinal });
+    const opts = app.matchOptions(teams, formations, humanSlots, knockout, { halfMinutes: tour.state.halfMinutes, difficulty: tour.state.difficulty as any, isFinal, teamSize: size });
     startMatch(opts, (r) => {
       tour.state.formation = app.settings.formationP1;
       tour.recordUserResult(r.score[0], r.score[1], r.aet, r.pens);
@@ -120,7 +124,7 @@ const params = new URLSearchParams(location.search);
 if (params.has('quick')) {
   // dev shortcut: straight into a match (optional ?demo for CPU vs CPU)
   const demo = params.has('demo');
-  const ms = new MatchScreen(app, app.matchOptions([TEAMS[0], TEAMS[1]], ['2-2', '1-2-1'], demo ? [-1, -1] : [0, -1], params.has('ko'), { halfMinutes: Number(params.get('half') ?? 1), seed: 42 }), () => mainMenu());
+  const ms = new MatchScreen(app, app.matchOptions([TEAMS[0], TEAMS[1]], ['2-2-2', '3-2-1'], demo ? [-1, -1] : [0, -1], params.has('ko'), { halfMinutes: Number(params.get('half') ?? 1), seed: 42, teamSize: Number(params.get('size') ?? app.settings.teamSize) }), () => mainMenu());
   app.push(ms);
   if (params.has('pens')) ms.session.match.startPenaltiesNow();
 } else if (params.has('champion')) {
@@ -134,13 +138,14 @@ const loop = new GameLoop({
     input.tick(dt);
     if (input.ui.pressed.debug) app.debug = !app.debug;
     if (input.ui.pressed.mute) audio.toggleMute();
+    if (input.ui.pressed.fullscreen) toggleFullscreen();
     app.screens.update(dt);
     app.fps = loop.fps;
   },
   render(alpha, frameDt) {
     scaler.begin();
     const ctx = scaler.ctx;
-    ctx.fillStyle = '#0b0f14'; ctx.fillRect(0, 0, CONFIG.LOGICAL_W, CONFIG.LOGICAL_H);
+    ctx.fillStyle = '#0b0f14'; ctx.fillRect(0, 0, VIEW.w, VIEW.h);
     app.screens.render(ctx, alpha, frameDt);
     if (app.debug) drawDebug(ctx);
   },

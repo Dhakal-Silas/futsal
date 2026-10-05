@@ -333,6 +333,12 @@ export function gainPossession(p: Player, ball: Ball, ctx: SimContext) {
 }
 
 function dribble(p: Player, ball: Ball, dt: number, frozen: boolean) {
+  if (p.isKeeper) {
+    // carried in the hands at chest height
+    const tx = p.x + Math.cos(p.heading) * 0.3, ty = p.y + Math.sin(p.heading) * 0.3;
+    ball.vx = (tx - ball.x) / 0.08; ball.vy = (ty - ball.y) / 0.08; ball.z = 1.0; ball.vz = 0;
+    return;
+  }
   const moving = p.speed > 0.8;
   const hx = Math.cos(p.heading), hy = Math.sin(p.heading);
   const dirX = moving ? p.vx / p.speed : hx;

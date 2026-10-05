@@ -73,7 +73,7 @@ export class TeamAI {
       for (const p of mine) {
         if (p === owner) { p.role = 'Carrier'; continue; }
         p.role = 'SupportAttack';
-        const adv = p.x * dir + (p.index === 4 ? 3 : 0);
+        const adv = p.x * dir + (p.index === m.teamSize - 1 ? 3 : 0);
         if (adv > best) { best = adv; runner = p; }
       }
       if (runner && runner !== owner && runner.x * dir < (CONFIG.PITCH_LENGTH / 2) - 4) runner.role = 'MakeRun';
@@ -93,10 +93,12 @@ export class TeamAI {
       }
     }
     const humanPress = m.humanPress[this.team];
-    const maxPressers = (this.params.pressAggression > 0.6 || humanPress) ? 2 : 1;
+    const maxPressers = (this.params.pressAggression > 0.7 || humanPress) ? 2 : 1;
     for (const p of sorted) {
       if (p.id === humanId) { pressers++; continue; } // the human counts as the first presser
-      if (pressers < maxPressers) { p.role = pressRole; pressers++; }
+      const dBall = Math.hypot(p.x - bx, p.y - by);
+      // a second presser only joins when already close to the ball
+      if (pressers < maxPressers && (pressers === 0 || dBall < 6)) { p.role = pressRole; pressers++; }
       else p.role = 'Defend';
     }
     // marking: assign the most dangerous unmarked opponents (closest to our goal) to defenders

@@ -1,3 +1,4 @@
+import { VIEW } from './view';
 import { CONFIG } from '../config';
 import { damp, lerp } from './math';
 
@@ -9,14 +10,15 @@ export class Camera {
   shake = 0;
   shakeX = 0; shakeY = 0;
   private shakePhase = 0;
-  viewW: number = CONFIG.LOGICAL_W;
-  viewH: number = CONFIG.LOGICAL_H;
+  viewW: number = VIEW.w;
+  viewH: number = VIEW.h;
   /** world units visible per logical pixel at zoom 1 */
   get ppm() { return CONFIG.CAM_BASE_ZOOM * this.zoom; }
 
   snap() { this.x = this.targetX; this.y = this.targetY; this.zoom = this.targetZoom; }
 
   update(dt: number) {
+    this.viewW = VIEW.w; this.viewH = VIEW.h;
     this.x = damp(this.x, this.targetX, CONFIG.CAM_FOLLOW_STIFFNESS, dt);
     this.y = damp(this.y, this.targetY, CONFIG.CAM_FOLLOW_STIFFNESS, dt);
     this.zoom = damp(this.zoom, this.targetZoom, CONFIG.CAM_ZOOM_STIFFNESS, dt);

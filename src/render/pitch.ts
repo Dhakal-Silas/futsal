@@ -74,7 +74,7 @@ export function drawPitch(ctx: CanvasRenderingContext2D, cam: Camera, quality: n
   }
 }
 
-/** Draws goal frames and nets. `front` = draw the part that should overlay players (near post + top). */
+/** Draws goal frames and nets. 'back' = net and far frame (behind players), 'front' = posts and crossbar. */
 export function drawGoals(ctx: CanvasRenderingContext2D, cam: Camera, nets: [NetState, NetState], layer: 'back' | 'front') {
   for (let i = 0; i < 2; i++) {
     const side = i === 0 ? -1 : 1;
@@ -82,71 +82,64 @@ export function drawGoals(ctx: CanvasRenderingContext2D, cam: Camera, nets: [Net
     const gw = CONFIG.GOAL_WIDTH / 2;
     const h = CONFIG.GOAL_HEIGHT;
     const d = CONFIG.GOAL_DEPTH;
-    const bx = gx + side * d; // back of net x
+    const bx = gx + side * d;
     const net = nets[i];
     const rip = net.ripple;
-
-    const px0 = cam.sx(gx), px1 = cam.sx(bx);
-    const yTop = cam.sy(-gw), yBot = cam.sy(gw);
-    const yTopH = cam.sy(-gw, h), yBotH = cam.sy(gw, h);
+    const wob = (t: number, k: number) => Math.sin(net.phase * k + t * 7) * rip * 0.2 * cam.ppm;
+    const fx = cam.sx(gx), rx = cam.sx(bx);
+    const yT = cam.sy(-gw), yB = cam.sy(gw), yTH = cam.sy(-gw, h), yBH = cam.sy(gw, h);
+    const postW = Math.max(3, 0.13 * cam.ppm);
 
     if (layer === 'back') {
-      // net mesh (back panel & side panels), slightly translucent
+      // dark net interior (ground + back panel) to read as a box
       ctx.save();
-      ctx.strokeStyle = 'rgba(235,235,245,0.55)';
-      ctx.lineWidth = 1;
-      const cells = 7;
-      // back panel: from (bx, -gw, 0..h) to (bx, gw, 0..h)
+      ctx.fillStyle = 'rgba(0,0,0,0.18)';
+      ctx.beginPath(); ctx.moveTo(fx, yT); ctx.lineTo(rx, yT); ctx.lineTo(rx, yB); ctx.lineTo(fx, yB); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = 'rgba(20,30,25,0.35)';
+      ctx.beginPath(); ctx.moveTo(rx, yT); ctx.lineTo(rx, yTH); ctx.lineTo(rx, yBH); ctx.lineTo(rx, yB); ctx.closePath(); ctx.fill();
+      // mesh: back panel (vertical + horizontal), roof (depth lines), side panels (diagonals)
+      ctx.strokeStyle = 'rgba(240,240,250,0.5)'; ctx.lineWidth = 1;
+      const cells = 8, rows = 5;
       for (let c = 0; c <= cells; c++) {
-        const t = c / cells;
-        const wy = -gw + 2 * gw * t;
-        const wobble = Math.sin(net.phase + t * 6) * rip * 0.25;
-        ctx.beginPath();
-        ctx.moveTo(px1 + wobble * cam.ppm, cam.sy(wy));
-        ctx.lineTo(px1 + wobble * cam.ppm, cam.sy(wy, h));
-        ctx.stroke();
+        const t = c / cells, wy = -gw + 2 * gw * t;
+        const w = wob(t, 1.0);
+        ctx.beginPath(); ctx.moveTo(rx + w, cam.sy(wy)); ctx.lineTo(rx + w, cam.sy(wy, h)); ctx.stroke();
+        // roof depth line
+        ctx.beginPath(); ctx.moveTo(fx, cam.sy(wy, h)); ctx.lineTo(rx + w, cam.sy(wy, h)); ctx.stroke();
       }
-      for (let c = 0; c <= cells; c++) {
-        const t = c / cells;
-        const wz = h * t;
-        const wobble = Math.sin(net.phase * 1.3 + t * 5) * rip * 0.25;
-        ctx.beginPath();
-        ctx.moveTo(px1 + wobble * cam.ppm, cam.sy(-gw, wz));
-        ctx.lineTo(px1 + wobble * cam.ppm, cam.sy(gw, wz));
-        ctx.stroke();
+      for (let r = 0; r <= rows; r++) {
+        const t = r / rows, wz = h * t;
+        const w = wob(t, 1.3);
+        ctx.beginPath(); ctx.moveTo(rx + w, cam.sy(-gw, wz)); ctx.lineTo(rx + w, cam.sy(gw, wz)); ctx.stroke();
       }
-      // top panel (roof) and side panels as outlines
-      ctx.beginPath();
-      ctx.moveTo(px0, yTopH); ctx.lineTo(px1, yTopH); ctx.lineTo(px1, yBotH); ctx.lineTo(px0, yBotH);
-      ctx.stroke();
-      // side nets diagonal mesh
-      for (let c = 1; c < 4; c++) {
+      for (let c = 1; c <= 4; c++) {
         const t = c / 4;
-        ctx.beginPath();
-        ctx.moveTo(px0 + (px1 - px0) * t, yTop); ctx.lineTo(px0 + (px1 - px0) * t, yTopH); ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(px0 + (px1 - px0) * t, yBot); ctx.lineTo(px0 + (px1 - px0) * t, yBotH); ctx.stroke();
+        const xx = fx + (rx - fx) * t;
+        for (const [y0, y1] of [[yT, yTH], [yB, yBH]]) { ctx.beginPath(); ctx.moveTo(xx, y0); ctx.lineTo(xx, y1); ctx.stroke(); }
       }
-      // back post bases
-      ctx.strokeStyle = 'rgba(255,255,255,0.9)';
-      ctx.lineWidth = Math.max(2, 0.1 * cam.ppm);
-      ctx.beginPath(); ctx.moveTo(px1, yTop); ctx.lineTo(px1, yTopH); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(px1, yBot); ctx.lineTo(px1, yBotH); ctx.stroke();
+      for (let r = 1; r < rows; r++) {
+        const wz = h * r / rows;
+        ctx.beginPath(); ctx.moveTo(fx, cam.sy(-gw, wz)); ctx.lineTo(rx, cam.sy(-gw, wz)); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(fx, cam.sy(gw, wz)); ctx.lineTo(rx, cam.sy(gw, wz)); ctx.stroke();
+      }
+      // back frame (grey, thinner) + ground bar
+      ctx.strokeStyle = '#cfd3da'; ctx.lineWidth = postW * 0.6; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(rx, yT); ctx.lineTo(rx, yTH); ctx.lineTo(rx, yBH); ctx.lineTo(rx, yB); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(fx, yT); ctx.lineTo(rx, yT); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(fx, yB); ctx.lineTo(rx, yB); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(fx, yTH); ctx.lineTo(rx, yTH); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(fx, yBH); ctx.lineTo(rx, yBH); ctx.stroke();
       ctx.restore();
     } else {
-      // front frame: posts and crossbar
-      ctx.save();
-      ctx.strokeStyle = '#f4f4f8';
-      ctx.lineWidth = Math.max(2.5, 0.12 * cam.ppm);
-      ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.moveTo(px0, yTop); ctx.lineTo(px0, yTopH); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(px0, yBot); ctx.lineTo(px0, yBotH); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(px0, yTopH); ctx.lineTo(px0, yBotH); ctx.stroke();
-      // thin top bars to the back
-      ctx.lineWidth = Math.max(1.5, 0.06 * cam.ppm);
-      ctx.strokeStyle = 'rgba(244,244,248,0.8)';
-      ctx.beginPath(); ctx.moveTo(px0, yTopH); ctx.lineTo(px1, yTopH); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(px0, yBotH); ctx.lineTo(px1, yBotH); ctx.stroke();
+      // front frame: two posts and the crossbar with a shaded edge
+      ctx.save(); ctx.lineCap = 'round';
+      ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = postW + 2;
+      ctx.beginPath(); ctx.moveTo(fx, yT); ctx.lineTo(fx, yTH); ctx.lineTo(fx, yBH); ctx.lineTo(fx, yB); ctx.stroke();
+      ctx.strokeStyle = '#f7f7fb'; ctx.lineWidth = postW;
+      ctx.beginPath(); ctx.moveTo(fx, yT); ctx.lineTo(fx, yTH); ctx.lineTo(fx, yBH); ctx.lineTo(fx, yB); ctx.stroke();
+      ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = Math.max(1, postW * 0.3);
+      ctx.beginPath(); ctx.moveTo(fx + postW * 0.35, yT); ctx.lineTo(fx + postW * 0.35, yTH); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(fx + postW * 0.35, yB); ctx.lineTo(fx + postW * 0.35, yBH); ctx.stroke();
       ctx.restore();
     }
   }
