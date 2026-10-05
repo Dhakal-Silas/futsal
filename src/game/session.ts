@@ -69,7 +69,7 @@ export class MatchSession {
     this.t += dt;
     if (this.intro) {
       this.introT += dt;
-      if (this.introT > 5 || this.input.ui.pressed.confirm) { this.intro = false; m.start(); this.audio.whistle(); }
+      if (this.introT > 5 || this.input.ui.pressed.confirm) { this.intro = false; m.start(); this.audio.whistle(); m.banner = { text: 'FINAL', sub: `${m.team(0).name} vs ${m.team(1).name}`, t: 3, color: '#fde68a' }; }
       this.cam.targetZoom = CONFIG.CAM_KICKOFF_ZOOM; this.cam.update(dt);
       return;
     }
@@ -267,6 +267,7 @@ export class MatchSession {
     this.hud.drawWaitPrompt(ctx, m, this.input);
     if (m.phase === 'penalties') this.hud.drawPenaltyAim(ctx, cam, m);
     for (const h of this.humans) {
+      if (m.phase === 'penalties') break;
       const owner = this.sim.ball.owner;
       const attacking = owner >= 0 ? m.player(owner).team === h.team : (h.activeId >= 0 && Math.hypot(this.sim.ball.x - m.player(h.activeId).x, this.sim.ball.y - m.player(h.activeId).y) < 2);
       const taker = !!m.restart && m.restart.team === h.team && (m.phase === 'kickoff' || m.phase === 'restart');

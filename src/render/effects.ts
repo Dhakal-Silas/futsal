@@ -29,11 +29,11 @@ export class Effects {
       this.spawn(x, y, z, Math.cos(a) * 3, Math.sin(a) * 3, 2 + Math.random() * 2, 0.4, 0.05, '#ffffff', 9);
     }
   }
-  confetti(x: number, y: number, n = 120, colors = ['#ffd700', '#ff4d4d', '#4dd2ff', '#7cfc00', '#ff8cff']) {
+  confetti(x: number, y: number, n = 120, colors = ['#ffd700', '#ff4d4d', '#4dd2ff', '#7cfc00', '#ff8cff'], size = 0.12) {
     for (let i = 0; i < n; i++) {
       const a = Math.random() * Math.PI * 2;
       const s = 2 + Math.random() * 4;
-      this.spawn(x + (Math.random() - 0.5) * 8, y + (Math.random() - 0.5) * 2, 2 + Math.random() * 2, Math.cos(a) * s * 0.4, Math.sin(a) * s * 0.3, 3 + Math.random() * 5, 2.5 + Math.random() * 1.5, 0.12, colors[i % colors.length], 2.2);
+      this.spawn(x + (Math.random() - 0.5) * 8, y + (Math.random() - 0.5) * 2, 2 + Math.random() * 2, Math.cos(a) * s * 0.4, Math.sin(a) * s * 0.3, 3 + Math.random() * 5, 2.5 + Math.random() * 1.5, size, colors[i % colors.length], 2.2);
     }
   }
 

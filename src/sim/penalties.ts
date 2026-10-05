@@ -100,8 +100,8 @@ export class PenaltyShootout {
           this.cpuTimer -= dt;
           const skill = m.params[team].shotNoise;
           if (this.cpuTimer <= 0) {
-            this.aimX = (sim.rng.next() < 0.5 ? -1 : 1) * (0.55 + sim.rng.next() * 0.45);
-            this.aimY = sim.rng.next() * 0.8;
+            this.aimX = (sim.rng.next() < 0.5 ? -1 : 1) * (0.5 + sim.rng.next() * 0.5);
+            this.aimY = 0.1 + sim.rng.next() * 0.8;
             this.fire(0.65 + sim.rng.next() * 0.35, skill);
           } else { this.charging = this.cpuTimer < 0.5; this.power = this.charging ? 1 - this.cpuTimer / 0.5 : 0; shooter.charging = this.charging ? { type: 'shoot', t: this.power } : null; }
         }
@@ -118,13 +118,13 @@ export class PenaltyShootout {
           const side = this.aimX >= 0 ? 1 : -1;
           const diveY = (guessRight ? side : -side) * Math.min(1.4, 0.5 + Math.abs(this.aimX) * 1.1);
           const central = Math.abs(this.aimX) < 0.3;
-          this.keeperSave = (guessRight || central) && sim.rng.next() < (central ? 0.55 : 0.5 + kskill * 0.3) - (this.aimY > 0.7 ? 0.25 : 0) - (this.power > 0.9 ? 0.1 : 0);
+          this.keeperSave = (guessRight || central) && sim.rng.next() < (central ? 0.5 : 0.4 + kskill * 0.25) - (this.aimY > 0.7 ? 0.2 : 0) - (Math.abs(this.aimX) > 0.85 ? 0.15 : 0) - (this.power > 0.9 ? 0.1 : 0);
           kcmd.dive = { x: keeper.x - 0.3, y: central ? (sim.rng.next() < 0.5 ? 0.4 : -0.4) : diveY };
           if (central && this.keeperSave) kcmd.dive = { x: keeper.x, y: 0.2 };
         }
         if (keeper.action === 'dive' && this.keeperSave && b.owner < 0 && Math.abs(b.x - keeper.x) < 0.9 && b.inNet < 0) {
           // save: parry the ball away
-          b.vx = -Math.abs(b.vx) * 0.35; b.vy = (b.y >= 0 ? 1 : -1) * 4; b.vz = 2; b.x = keeper.x - 0.3;
+          b.vx = -Math.abs(b.vx) * 0.18; b.vy = (b.y >= 0 ? 1 : -1) * 3; b.vz = 1.5; b.x = keeper.x - 0.3;
           b.kickedBy = keeper.id; b.lastTouch = keeper.id; b.lastTouchTeam = keeper.team; b.kickCooldown = 0.5;
           this.keeperSave = false; this.resolve('missed', 'save');
           break;
@@ -148,8 +148,8 @@ export class PenaltyShootout {
     const m = this.match, sim = m.sim;
     const shooter = this.shooter;
     const gw = CONFIG.GOAL_WIDTH / 2;
-    const targetY = this.aimX * (gw + 0.25); // slightly past the post is possible on max aim
-    const targetZ = this.aimY * (CONFIG.GOAL_HEIGHT + 0.5);
+    const targetY = this.aimX * (gw - 0.2); // full aim is just inside the post
+    const targetZ = this.aimY * (CONFIG.GOAL_HEIGHT - 0.3);
     const dx = HALF_LENGTH - sim.ball.x, dy = targetY - sim.ball.y;
     const d = Math.hypot(dx, dy);
     const speed = CONFIG.SHOT_MIN_SPEED + power * (CONFIG.SHOT_MAX_SPEED - CONFIG.SHOT_MIN_SPEED);
@@ -192,7 +192,7 @@ export class PenaltyShootout {
 
   private finish(w: TeamIndex) {
     this.winner = w; this.stage = 'done'; this.done = true;
-    this.match.winner = w;
+    this.match.winner = w; this.match.phaseT = 0;
     this.match.banner = { text: `${this.match.team(w).short} WIN ON PENALTIES`, sub: `${this.scores[0]} - ${this.scores[1]}`, t: 3, color: this.match.team(w).kit.primary };
   }
 

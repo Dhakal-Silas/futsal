@@ -129,7 +129,7 @@ export class Hud {
   drawPenaltyAim(ctx: CanvasRenderingContext2D, cam: Camera, m: Match) {
     const p = m.penalties; if (!p || p.stage !== 'aiming') return;
     const gw = CONFIG.GOAL_WIDTH / 2;
-    const ty = p.aimX * (gw + 0.25), tz = p.aimY * (CONFIG.GOAL_HEIGHT + 0.5);
+    const ty = p.aimX * (gw - 0.2), tz = p.aimY * (CONFIG.GOAL_HEIGHT - 0.3);
     const sx = cam.sx(HALF_LENGTH), sy = cam.sy(ty, tz);
     ctx.strokeStyle = '#facc15'; ctx.lineWidth = 2.5;
     ctx.beginPath(); ctx.arc(sx, sy, 10, 0, Math.PI * 2); ctx.stroke();
@@ -153,7 +153,7 @@ export class Hud {
         text(ctx, `${name} — P${slot + 1} press ${k} to pass (or shoot / cross)`, CONFIG.LOGICAL_W / 2, 86, 15, '#fff', 'center', 'bold');
       }
     }
-    if (m.phase === 'halftime') text(ctx, 'HALF TIME — press Enter to continue', CONFIG.LOGICAL_W / 2, CONFIG.LOGICAL_H * 0.5, 22, '#fff', 'center', '900');
+    if (m.phase === 'halftime') { text(ctx, 'HALF TIME — press Enter to continue', CONFIG.LOGICAL_W / 2, CONFIG.LOGICAL_H * 0.5, 22, '#fff', 'center', '900'); text(ctx, 'Esc opens the pause menu to change formation', CONFIG.LOGICAL_W / 2, CONFIG.LOGICAL_H * 0.5 + 32, 15, '#e5e7eb', 'center'); }
     if (m.phase === 'extratime_break') text(ctx, 'EXTRA TIME — press Enter to continue', CONFIG.LOGICAL_W / 2, CONFIG.LOGICAL_H * 0.5, 22, '#fff', 'center', '900');
   }
 }

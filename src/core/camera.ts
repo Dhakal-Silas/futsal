@@ -9,8 +9,8 @@ export class Camera {
   shake = 0;
   shakeX = 0; shakeY = 0;
   private shakePhase = 0;
-  viewW = CONFIG.LOGICAL_W;
-  viewH = CONFIG.LOGICAL_H;
+  viewW: number = CONFIG.LOGICAL_W;
+  viewH: number = CONFIG.LOGICAL_H;
   /** world units visible per logical pixel at zoom 1 */
   get ppm() { return CONFIG.CAM_BASE_ZOOM * this.zoom; }
 

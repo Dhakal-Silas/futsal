@@ -164,7 +164,11 @@ export class Match {
         return;
       case 'penalties':
         this.penalties?.step(dt);
-        if (this.penalties?.done) { this.winner = this.penalties.winner; this.phase = 'finished'; this.phaseT = 0; }
+        sim.step(dt);
+        for (const e of sim.events) this.events.push(e);
+        sim.events.length = 0;
+        if (this.penalties?.done && this.phaseT > 3) { this.winner = this.penalties.winner; this.phase = 'finished'; this.phaseT = 0; }
+        if (this.penalties?.done && this.phaseT <= 3 && this.phaseT - dt <= 0) this.phaseT = 0;
         return;
       case 'halftime': case 'fulltime': case 'extratime_break': case 'finished':
         return;
@@ -455,6 +459,9 @@ export class Match {
   }
   private get kickoffTeamFirst(): TeamIndex { return this.goals.length ? this.kickoffTeamInitial : this.kickoffTeam; }
   private kickoffTeamInitial: TeamIndex = 0;
+
+  /** Dev helper: jump straight to a penalty shootout. */
+  startPenaltiesNow() { if (this.phase === 'prematch') this.start(); this.sim.ballActive = false; this.half = 4; this.beginPenalties(); }
 
   private beginPenalties() {
     this.phase = 'penalties'; this.phaseT = 0;
