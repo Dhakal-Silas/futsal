@@ -63,3 +63,18 @@ tests/    ball, evaluate, bracket, match-smoke (runs full CPU vs CPU matches hea
 8. Tournament: draw, bracket, autosim, ET + penalties, final presentation, champion, save/resume.
 9. Polish: blending, camera, particles, sound, slow-mo, stats, settings.
 10. Tests, balancing, README, cleanup.
+
+## Decisions made during implementation
+- Group stage leads to the quarter-finals (8 qualifiers), since 4 groups of 4 cannot feed a Round of 16.
+- Fouls inside the area are free kicks from a spot at least 7 m out (no in-play penalty kicks); the
+  penalty mechanic is used for shootouts only.
+- An idle human restart taker is auto-played after 8 s so a match can never stall.
+- Human teams' AI teammates use the "Hard" parameter set (positioning only); difficulty applies to the CPU side.
+- CPU keeper skill blends team rating (40%) with the difficulty table (60%).
+- Dev URL flags: `?quick`, `&demo`, `&ko`, `&half=<min>`, `&pens`, `?champion`.
+
+## Status
+All ten milestones implemented. Verified with unit tests (ball physics, AI scoring helpers,
+bracket/group logic), headless full-match tests (CPU vs CPU, determinism, ET + penalties) and
+scripted headless-Chrome runs of every screen and flow (quick match, 2P, tournament with groups,
+save/resume, shootout, champion screen) at a steady 60 FPS.

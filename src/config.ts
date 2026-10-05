@@ -108,6 +108,7 @@ export const CONFIG = {
   RESTART_DELAY: 0.9,
   RESTART_OPPONENT_DISTANCE: 5,
   SETPIECE_AUTO_DELAY: 1.5, // CPU takes a restart after this long
+  HUMAN_RESTART_TIMEOUT: 8, // an idle human taker is auto-played after this long
   HALF_TIME_DURATION: 0, // handled by UI, 0 = wait for input
   REPLAY_RECORD_SECONDS: 2.5,
   REPLAY_PLAY_SECONDS: 2.0,

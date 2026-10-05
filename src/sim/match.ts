@@ -5,6 +5,7 @@ import { createPlayer, placePlayer, startAction, gainPossession, releaseBall } f
 import { resetBall } from './ball';
 import { formationAnchor, formationById, kickoffPosition, type Formation } from './formation';
 import { playerName } from './teams';
+import { choosePassTarget, makeKick } from './kicks';
 import type { Kick, MatchEvent, Phase, Player, Restart, TeamIndex, TeamInfo, TeamStats, PenaltyState } from './types';
 import { emptyStats } from './types';
 import { difficultyParams, type Difficulty, type DifficultyParams } from '../ai/difficulty';
@@ -89,6 +90,7 @@ export class Match {
     for (let i = 0; i < this.maxReplay; i++) this.replay.push(this.makeSnapshot());
     this.sim.attackDirs = [1, -1];
     this.kickoffTeam = (this.sim.rng.next() < 0.5 ? 0 : 1) as TeamIndex;
+    this.kickoffTeamInitial = this.kickoffTeam;
     this.setupKickoff(this.kickoffTeam);
     this.phase = 'prematch';
   }
@@ -370,6 +372,13 @@ export class Match {
     } else {
       // keep the ball at the taker while waiting
       if (b.owner !== taker.id && taker.action !== 'kick' && taker.action !== 'throw') { gainPossession(taker, b, this.sim); }
+      // an idle human taker is helped out after a while so the match never stalls
+      if (this.isHuman(r.team) && r.timer > CONFIG.HUMAN_RESTART_TIMEOUT && taker.action === 'none' && !taker.isKeeper) {
+        const dir = this.attackDir(r.team);
+        const choice = choosePassTarget(taker, this.sim.teammates(r.team), this.sim.opponents(r.team), dir, 0, 'pass', dir);
+        const cmd = this.sim.command(taker.id);
+        cmd.kick = choice.target ? makeKick('pass', 0.5, choice.aimX, choice.aimY, choice.target.id, 0.03, choice.speed, 0) : makeKick('pass', 0.5, dir, 0, -1, 0.03);
+      }
     }
     // keep opponents away from the ball
     for (const p of this.sim.players) {
